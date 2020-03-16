@@ -103,6 +103,62 @@ router.post('/service-orders', (req, res) => {
   });
 });
 
+//get Devices List for Device Manger Page
+router.post('/device-manager', (req, res) => {
+
+  console.log('POST /device-manager: ', req.body);
+
+  getRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/device-manager/devices?limit=5000&page=1&nsoInstance=${req.body.nsoInstance}`;
+  getRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
+
+  request(getRequestOptions, function(error, response, body) {
+
+    console.log('\nResponse Error: ', error);
+    console.log('\nResponse Body: ', body);
+
+    if (error) {
+      responseObj.status  = 'error';
+      responseObj.msg     = `Error Occurred while Pinging Device. Error Message: ${error}`;
+    } else {
+      responseObj.status  = 'success';
+      responseObj.msg     = 'Ping Successful';
+      responseObj.body    = body;
+    }
+
+    res.send(responseObj);
+  });
+});
+
+//Ping Device from Device Manager
+
+router.post('/ping-device', (req, res) => {
+
+  console.log('POST /ping-device: ', req.body);
+
+  postRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/device-manager/devices/ping?nsoInstance=${req.body.nsoInstance}`;
+  postRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
+  postRequestOptions.body = `${req.body.pingDeviceInfo}`
+
+  request(postRequestOptions, function(error, response, body) {
+
+    console.log('\nResponse Error: ', error);
+    console.log('\nResponse Body: ', body);
+
+    if (error) {
+      responseObj.status  = 'error';
+      responseObj.msg     = `Error Occurred while validating User's credentials. Error Message: ${error}`;
+    } else {
+      responseObj.status  = 'success';
+      responseObj.msg     = 'Successfully validated user credentials';
+      responseObj.body    = body;
+    }
+
+    res.send(responseObj);
+  });
+});
+
+
+
 app.listen(8080, () => {
 
   console.log('\n\n');
