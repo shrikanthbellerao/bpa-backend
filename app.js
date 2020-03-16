@@ -103,6 +103,32 @@ router.post('/service-orders', (req, res) => {
   });
 });
 
+// Fetch Active Services from Service Catalog microservice of BPA
+router.post('/active-services', (req, res) => {
+
+  console.log('POST /active-services: ', req.body);
+
+  getRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/service-catalog/service-orders`;
+  getRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
+
+  request(getRequestOptions, function(error, response, body) {
+
+    console.log('\nResponse Error: ', error);
+    console.log('\nResponse Body: ', body);
+
+    if (error) {
+      responseObj.status  = 'error';
+      responseObj.msg     = `Error Occurred while fetching Active Services. Error Message: ${error}`;
+    } else {
+      responseObj.status  = 'success';
+      responseObj.msg     = 'Successfully fetched Active Services';
+      responseObj.body    = body;
+    }
+
+    res.send(responseObj);
+  });
+});
+
 app.listen(8080, () => {
 
   console.log('\n\n');
