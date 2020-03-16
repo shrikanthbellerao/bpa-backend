@@ -103,6 +103,31 @@ router.post('/service-orders', (req, res) => {
   });
 });
 
+router.post('/service-items', (req, res) => {
+
+  console.log('POST /service-items: ', req.body);
+
+  getRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/service-catalog/service-items?_page=1&_limit=20&status=Active&order=asc`;
+  getRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
+
+  request(getRequestOptions, function(error, response, body) {
+
+    console.log('\nResponse Error: ', error);
+    console.log('\nResponse Body: ', body);
+
+    if (error) {
+      responseObj.status  = 'error';
+      responseObj.msg     = `Error Occurred while fetching Service Items. Error Message: ${error}`;
+    } else {
+      responseObj.status  = 'success';
+      responseObj.msg     = 'Successfully fetched Service Items';
+      responseObj.body    = body;
+    }
+
+    res.send(responseObj);
+  });
+});
+
 app.listen(8080, () => {
 
   console.log('\n\n');
