@@ -4,7 +4,7 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const compression = require('compression');
-const request     = require('request').defaults({ rejectUnauthorized: false });
+const request = require('request').defaults({ rejectUnauthorized: false });
 const redis = require("redis");
 
 
