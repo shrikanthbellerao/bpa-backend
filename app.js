@@ -5,7 +5,8 @@ const mongoose    = require('mongoose');
 const bodyParser  = require('body-parser');
 const compression = require('compression');
 const request     = require('request').defaults({ rejectUnauthorized: false });
-
+const cors = require('cors');
+app.use(cors());
 const GradesSchema = require('./sample_training.model').GradesSchema;
 
 app.use(bodyParser.json({limit: '10mb'}));    // limit : 10mb is required for File upload
@@ -76,6 +77,11 @@ router.post('/login', (req, res) => {
     res.send(responseObj);
   });
 });
+router.get('/name',(req,res) => {
+  res.send({name: 'priya'})
+  })
+
+
 
 // Fetch Service Orders from Service Catalog microservice of BPA
 router.post('/service-orders', (req, res) => {
@@ -102,6 +108,7 @@ router.post('/service-orders', (req, res) => {
     res.send(responseObj);
   });
 });
+
 
 app.listen(8080, () => {
 
