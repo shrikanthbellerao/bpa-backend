@@ -1,8 +1,8 @@
-const express     = require('express');
-const app         = express();
-const router      = express.Router();
-const mongoose    = require('mongoose');
-const bodyParser  = require('body-parser');
+const express = require('express');
+const app = express();
+const router = express.Router();
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
 const compression = require('compression');
 const request     = require('request').defaults({ rejectUnauthorized: false });
 const redis = require("redis");
@@ -16,11 +16,12 @@ RedisClient.on('connect', function() {
 
 const GradesSchema = require('./sample_training.model').GradesSchema;
 
-app.use(bodyParser.json({limit: '10mb'}));    // limit : 10mb is required for File upload
-app.use(bodyParser.urlencoded({limit: '10mb', extended: true }));
+app.use(bodyParser.json({ limit: '10mb' }));    // limit : 10mb is required for File upload
+app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 app.use(function (req, res, next) {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  res.header("Access-Control-Allow-Methods", "PUT");
   next();
 });
 app.use(compression());
@@ -33,32 +34,33 @@ router.get('/', (req, res) => {
 });
 
 var postRequestOptions = {
-  url     : '',
-  method  : 'POST',
-  json    : true,
-  headers : {
-    Accept : 'application/json',
-    'Content-Type' : 'application/json'
+  url: '',
+  method: 'POST',
+  json: true,
+  headers: {
+    Accept: 'application/json',
+    'Content-Type': 'application/json'
   },
-  body    : {},
- 
+  body: {},
 };
 
 var getRequestOptions = {
-  url     : '',
-  method  : 'GET',
-  json    : true,
-  headers : {
-    Accept : 'application/json',
-    'Content-Type' : 'application/json'
+  url: '',
+  method: 'GET',
+  json: true,
+  headers: {
+    Accept: 'application/json',
+    'Content-Type': 'application/json'
   }
 };
 
 var responseObj = {
-  status  : '',
-  msg     : '',
-  body    : null
+  status: '',
+  msg: '',
+  body: null
 };
+
+var broadcastMessage = 'Site is under construction. Please check later!'
 
 // Validate User's credentials to access BPA
 router.post('/login', (req, res) => {
@@ -68,18 +70,18 @@ router.post('/login', (req, res) => {
   postRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/login`;
   postRequestOptions.headers.Authorization = `Basic ${req.body.base64Credential}`;
 
-  request(postRequestOptions, function(error, response, body) {
+  request(postRequestOptions, function (error, response, body) {
 
     console.log('\nResponse Error: ', error);
     console.log('\nResponse Body: ', body);
 
     if (error) {
-      responseObj.status  = 'error';
-      responseObj.msg     = `Error Occurred while validating User's credentials. Error Message: ${error}`;
+      responseObj.status = 'error';
+      responseObj.msg = `Error Occurred while validating User's credentials. Error Message: ${error}`;
     } else {
-      responseObj.status  = 'success';
-      responseObj.msg     = 'Successfully validated user credentials';
-      responseObj.body    = body;
+      responseObj.status = 'success';
+      responseObj.msg = 'Successfully validated user credentials';
+      responseObj.body = body;
     }
 
     res.send(responseObj);
@@ -94,23 +96,50 @@ router.post('/service-orders', (req, res) => {
   getRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/service-catalog/service-orders`;
   getRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
 
-  request(getRequestOptions, function(error, response, body) {
+  request(getRequestOptions, function (error, response, body) {
 
     console.log('\nResponse Error: ', error);
     console.log('\nResponse Body: ', body);
 
     if (error) {
-      responseObj.status  = 'error';
-      responseObj.msg     = `Error Occurred while fetching Service Orders. Error Message: ${error}`;
+      responseObj.status = 'error';
+      responseObj.msg = `Error Occurred while fetching Service Orders. Error Message: ${error}`;
     } else {
-      responseObj.status  = 'success';
-      responseObj.msg     = 'Successfully fetched Service Orders';
-      responseObj.body    = body;
+      responseObj.status = 'success';
+      responseObj.msg = 'Successfully fetched Service Orders';
+      responseObj.body = body;
     }
 
     res.send(responseObj);
   });
 });
+
+
+router.post('/service-items', (req, res) => {
+
+  console.log('POST /service-items: ', req.body);
+
+  getRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/service-catalog/service-items?_page=1&_limit=20&status=Active&order=asc`;
+  getRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
+
+  request(getRequestOptions, function (error, response, body) {
+
+    console.log('\nResponse Error: ', error);
+    console.log('\nResponse Body: ', body);
+
+    if (error) {
+      responseObj.status = 'error';
+      responseObj.msg = `Error Occurred while fetching Service Items. Error Message: ${error}`;
+    } else {
+      responseObj.status = 'success';
+      responseObj.msg = 'Successfully fetched Service Items';
+      responseObj.body = body;
+    }
+
+    res.send(responseObj);
+  });
+});
+
 
 //get Devices List for Device Manger Page
 router.post('/device-manager', (req, res) => {
@@ -137,12 +166,13 @@ router.post('/device-manager', (req, res) => {
 
     res.send(responseObj);
   });
-
 });
 
 // Ping Device from Device Manager
 
 router.post('/ping-device', (req, res) => {
+
+  // console.log('POST /ping-device: ', req.body);
 
   RedisClient.get('ping-result-'+req.body.pingDeviceInfo[0].name,(err,reply) =>
   {
@@ -180,6 +210,24 @@ router.post('/ping-device', (req, res) => {
       
     }
   });
+
+});
+
+// Return the Broadcast message
+router.get('/broadcast-message', (req, res) => {
+
+  console.log('GET /broadcast-message: ', req.body);
+
+  res.send({ broadcastMessage });
+});
+
+// Update the Broadcast Message
+router.put('/broadcast-message', (req, res) => {
+
+  console.log('PUT /broadcast-message: ', req.body);
+
+  broadcastMessage = req.body.broadcastMessage;
+  res.send({ broadcastMessage });
 
 });
 
