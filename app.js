@@ -13,6 +13,7 @@ app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 app.use(function (req, res, next) {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  res.header("Access-Control-Allow-Methods", "PUT");
   next();
 });
 app.use(compression());
@@ -50,6 +51,8 @@ var responseObj = {
   msg: '',
   body: null
 };
+
+var broadcastMessage = 'Site is under construction. Please check later!'
 
 // Validate User's credentials to access BPA
 router.post('/login', (req, res) => {
@@ -143,6 +146,23 @@ router.post('/device-ping', (req, res) => {
   }];
 
   res.send(responseObj);
+});
+
+// Return the Broadcast message
+router.get('/broadcast-message', (req, res) => {
+
+  console.log('GET /broadcast-message: ', req.body);
+
+  res.send({ broadcastMessage });
+});
+
+// Update the Broadcast Message
+router.put('/broadcast-message', (req, res) => {
+
+  console.log('PUT /broadcast-message: ', req.body);
+
+  broadcastMessage = req.body.broadcastMessage;
+  res.send({ broadcastMessage });
 });
 
 app.listen(8080, () => {
