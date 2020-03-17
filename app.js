@@ -1,15 +1,15 @@
-const express     = require('express');
-const app         = express();
-const router      = express.Router();
-const mongoose    = require('mongoose');
-const bodyParser  = require('body-parser');
+const express = require('express');
+const app = express();
+const router = express.Router();
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
 const compression = require('compression');
-const request     = require('request').defaults({ rejectUnauthorized: false });
+const request = require('request').defaults({ rejectUnauthorized: false });
 
 const GradesSchema = require('./sample_training.model').GradesSchema;
 
-app.use(bodyParser.json({limit: '10mb'}));    // limit : 10mb is required for File upload
-app.use(bodyParser.urlencoded({limit: '10mb', extended: true }));
+app.use(bodyParser.json({ limit: '10mb' }));    // limit : 10mb is required for File upload
+app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 app.use(function (req, res, next) {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
@@ -25,30 +25,30 @@ router.get('/', (req, res) => {
 });
 
 var postRequestOptions = {
-  url     : '',
-  method  : 'POST',
-  json    : true,
-  headers : {
-    Accept : 'application/json',
-    'Content-Type' : 'application/json'
+  url: '',
+  method: 'POST',
+  json: true,
+  headers: {
+    Accept: 'application/json',
+    'Content-Type': 'application/json'
   },
-  body    : {},
+  body: {},
 };
 
 var getRequestOptions = {
-  url     : '',
-  method  : 'GET',
-  json    : true,
-  headers : {
-    Accept : 'application/json',
-    'Content-Type' : 'application/json'
+  url: '',
+  method: 'GET',
+  json: true,
+  headers: {
+    Accept: 'application/json',
+    'Content-Type': 'application/json'
   }
 };
 
 var responseObj = {
-  status  : '',
-  msg     : '',
-  body    : null
+  status: '',
+  msg: '',
+  body: null
 };
 
 // Validate User's credentials to access BPA
@@ -59,18 +59,18 @@ router.post('/login', (req, res) => {
   postRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/login`;
   postRequestOptions.headers.Authorization = `Basic ${req.body.base64Credential}`;
 
-  request(postRequestOptions, function(error, response, body) {
+  request(postRequestOptions, function (error, response, body) {
 
     console.log('\nResponse Error: ', error);
     console.log('\nResponse Body: ', body);
 
     if (error) {
-      responseObj.status  = 'error';
-      responseObj.msg     = `Error Occurred while validating User's credentials. Error Message: ${error}`;
+      responseObj.status = 'error';
+      responseObj.msg = `Error Occurred while validating User's credentials. Error Message: ${error}`;
     } else {
-      responseObj.status  = 'success';
-      responseObj.msg     = 'Successfully validated user credentials';
-      responseObj.body    = body;
+      responseObj.status = 'success';
+      responseObj.msg = 'Successfully validated user credentials';
+      responseObj.body = body;
     }
 
     res.send(responseObj);
@@ -85,18 +85,18 @@ router.post('/service-orders', (req, res) => {
   getRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/service-catalog/service-orders`;
   getRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
 
-  request(getRequestOptions, function(error, response, body) {
+  request(getRequestOptions, function (error, response, body) {
 
     console.log('\nResponse Error: ', error);
     console.log('\nResponse Body: ', body);
 
     if (error) {
-      responseObj.status  = 'error';
-      responseObj.msg     = `Error Occurred while fetching Service Orders. Error Message: ${error}`;
+      responseObj.status = 'error';
+      responseObj.msg = `Error Occurred while fetching Service Orders. Error Message: ${error}`;
     } else {
-      responseObj.status  = 'success';
-      responseObj.msg     = 'Successfully fetched Service Orders';
-      responseObj.body    = body;
+      responseObj.status = 'success';
+      responseObj.msg = 'Successfully fetched Service Orders';
+      responseObj.body = body;
     }
 
     res.send(responseObj);
@@ -110,22 +110,39 @@ router.post('/service-items', (req, res) => {
   getRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/service-catalog/service-items?_page=1&_limit=20&status=Active&order=asc`;
   getRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
 
-  request(getRequestOptions, function(error, response, body) {
+  request(getRequestOptions, function (error, response, body) {
 
     console.log('\nResponse Error: ', error);
     console.log('\nResponse Body: ', body);
 
     if (error) {
-      responseObj.status  = 'error';
-      responseObj.msg     = `Error Occurred while fetching Service Items. Error Message: ${error}`;
+      responseObj.status = 'error';
+      responseObj.msg = `Error Occurred while fetching Service Items. Error Message: ${error}`;
     } else {
-      responseObj.status  = 'success';
-      responseObj.msg     = 'Successfully fetched Service Items';
-      responseObj.body    = body;
+      responseObj.status = 'success';
+      responseObj.msg = 'Successfully fetched Service Items';
+      responseObj.body = body;
     }
 
     res.send(responseObj);
   });
+});
+
+// Ping the device and return the reponse
+router.post('/device-ping', (req, res) => {
+
+  console.log('POST /service-orders: ', req.body);
+
+  var responseObj = [{ 
+    "jsonrpc": "2.0", 
+    "result": [{
+      "name": "result", 
+      "value": "PING 10.122.32.63 (10.122.32.63) 56(84) bytes of data.\n64 bytes from 10.122.32.63: icmp_seq=1 ttl=254 time=0.665 ms\n\n--- 10.122.32.63 ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.665/0.665/0.665/0.000 ms\n"
+    }], 
+    "id": 3 
+  }];
+
+  res.send(responseObj);
 });
 
 app.listen(8080, () => {
