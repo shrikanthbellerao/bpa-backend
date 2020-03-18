@@ -5,6 +5,14 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const compression = require('compression');
 const request = require('request').defaults({ rejectUnauthorized: false });
+const redis = require("redis");
+
+
+
+const RedisClient = redis.createClient();
+RedisClient.on('connect', function() {
+  console.log('Connected to Redis');
+});
 
 const GradesSchema = require('./sample_training.model').GradesSchema;
 
@@ -106,6 +114,7 @@ router.post('/service-orders', (req, res) => {
   });
 });
 
+
 router.post('/service-items', (req, res) => {
 
   console.log('POST /service-items: ', req.body);
@@ -131,21 +140,77 @@ router.post('/service-items', (req, res) => {
   });
 });
 
-// Ping the device and return the reponse
-router.post('/device-ping', (req, res) => {
 
-  console.log('POST /service-orders: ', req.body);
+//get Devices List for Device Manger Page
+router.post('/device-manager', (req, res) => {
 
-  var responseObj = [{ 
-    "jsonrpc": "2.0", 
-    "result": [{
-      "name": "result", 
-      "value": "PING 10.122.32.63 (10.122.32.63) 56(84) bytes of data.\n64 bytes from 10.122.32.63: icmp_seq=1 ttl=254 time=0.665 ms\n\n--- 10.122.32.63 ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.665/0.665/0.665/0.000 ms\n"
-    }], 
-    "id": 3 
-  }];
+  // console.log('POST /device-manager: ', req.body);
 
-  res.send(responseObj);
+  getRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/device-manager/devices?limit=5000&page=1&nsoInstance=${req.body.nsoInstance}`;
+  getRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
+ 
+
+  request(getRequestOptions, function(error, response, body) {
+
+    // console.log('\nResponse Error: ', error);
+    // console.log('\nResponse Body: ', body);
+
+    if (error) {
+      responseObj.status  = 'error';
+      responseObj.msg     = `Error Occurred while fetching data. Error Message: ${error}`;
+    } else {
+      responseObj.status  = 'success';
+      responseObj.msg     = 'Fetched Data Successfully';
+      responseObj.body    = body;
+    }
+
+    res.send(responseObj);
+  });
+});
+
+// Ping Device from Device Manager
+
+router.post('/ping-device', (req, res) => {
+
+  // console.log('POST /ping-device: ', req.body);
+
+  RedisClient.get('ping-result-'+req.body.pingDeviceInfo[0].name,(err,reply) =>
+  {
+
+    if(reply!=null){
+      var sendData ={
+        value:reply
+      }
+      res.send(sendData);
+    }
+    else{
+
+      postRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/device-manager/devices/ping?nsoInstance=${req.body.nsoInstance}`;
+      postRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
+      postRequestOptions.body = req.body.pingDeviceInfo;
+    
+    
+      request(postRequestOptions, function(error, response, body) {
+
+        // console.log('\nResponse Error: ', error);
+        // console.log('\nResponse Body: ', body);
+
+        if (error) {
+          responseObj.status  = 'error';
+          responseObj.msg     = `Error Occurred while Pinging Device. Error Message: ${error}`;
+        } else {
+          responseObj.status  = 'success';
+          responseObj.msg     = 'Ping Successful';
+          responseObj.body    = body;
+        }
+    
+        res.send(body[0].result[0]);
+        RedisClient.set('ping-result-'+req.body.pingDeviceInfo[0].name,body[0].result[0].value);
+      });
+      
+    }
+  });
+
 });
 
 // Return the Broadcast message
@@ -163,6 +228,7 @@ router.put('/broadcast-message', (req, res) => {
 
   broadcastMessage = req.body.broadcastMessage;
   res.send({ broadcastMessage });
+
 });
 
 app.listen(8080, () => {
