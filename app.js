@@ -10,6 +10,7 @@ const redis = require("redis");
 const PingDeviceSchema = require('./ping-device.model').PingDeviceSchema;
 const ServiceCategorySchema = require('./service-category.model').ServiceCategorySchema;
 const ServiceItemsSchema = require('./service-item.model').ServiceItemsSchema;
+const DeviceSchema = require('./device.model').DeviceSchema;
 
 const dbUser = 'bpa';
 const dbPass = 'bpa';
@@ -20,7 +21,7 @@ const dbUrl = `mongodb+srv://${dbUser}:${dbPass}@${dbServer}/${dbName}?retryWrit
 
 var connObj = null;
 
-  // Build the Redis Client
+// Build the Redis Client
 const RedisClient = redis.createClient();
 RedisClient.on('connect', function () {
   console.log('Connected to Redis');
@@ -119,8 +120,8 @@ router.post('/service-orders', (req, res) => {
 
   request(getRequestOptions, function (error, response, body) {
 
-    // console.log('\nResponse Error: ', error);
-    // console.log('\nResponse Body: ', body);
+    console.log('\nResponse Error: ', error);
+    console.log('\nResponse Body: ', body);
 
     if (error) {
       responseObj.status = 'error';
@@ -138,15 +139,15 @@ router.post('/service-orders', (req, res) => {
 
 router.post('/service-items', (req, res) => {
 
-  console.log('POST /service-items: ', req.body);
+  // console.log('POST /service-items: ', req.body);
 
   getRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/service-catalog/service-items?_page=1&_limit=20&status=Active&order=asc`;
   getRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
 
   request(getRequestOptions, function (error, response, body) {
 
-    // console.log('\nResponse Error: ', error);
-    // console.log('\nResponse Body: ', body);
+    console.log('\nResponse Error: ', error);
+    console.log('\nResponse Body: ', body);
 
     if (error) {
       responseObj.status = 'error';
@@ -242,42 +243,94 @@ router.post('/get-favourite-items', (req, res) => {
 //get Devices List for Device Manger Page
 router.post('/device-manager', (req, res) => {
 
+  var ErrorFlag;
   // console.log('POST /device-manager: ', req.body);
+  const DeviceModel = connObj.model('device', DeviceSchema);
+  DeviceModel.find({}, {}, {}, (err, docs) => {
+    console.log('Error: ', err);
+    // console.log('Docs: ', docs);
 
-  getRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/device-manager/devices?limit=5000&page=1&nsoInstance=${req.body.nsoInstance}`;
-  getRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
+    if (!err && docs && (docs.length > 0)) {
 
+      console.log('\nData is present in MongoDB');
 
-  request(getRequestOptions, function (error, response, body) {
-
-    // console.log('\nResponse Error: ', error);
-    // console.log('\nResponse Body: ', body);
-
-    if (error) {
-      responseObj.status = 'error';
-      responseObj.msg = `Error Occurred while fetching data. Error Message: ${error}`;
+      responseObj.status = 'Success';
+      responseObj.msg = 'Fetching Successful';
+      responseObj.body = docs;
+      res.send(responseObj);
     } else {
-      responseObj.status = 'success';
-      responseObj.msg = 'Fetched Data Successfully';
-      responseObj.body = body;
-    }
+      console.log('\nData is not present in MongoDB');
 
-    res.send(responseObj);
+      getRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/device-manager/devices?limit=5000&page=1&nsoInstance=${req.body.nsoInstance}`;
+      getRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
+
+
+      request(getRequestOptions, function (error, response, devicelist) {
+
+        console.log('\nResponse Error: ', error);
+        // console.log('\nResponse Body: ', body);
+
+        if (error) {
+          responseObj.status = 'Error';
+          responseObj.msg = `Error Occurred while Fetching Device List. Error Message: ${error}`;
+          responseObj.body = null;
+          res.send(responseObj);
+        } else {
+
+          devicelist.forEach(device => {
+            var deviceObj = new DeviceModel({
+              name: device.name,
+              description: device.description,
+              address: device.address,
+              port: '22',
+              authgroup: device.authgroup,
+              admin_state: device.admin_state,
+              device_type: device.device_type,
+              ned_id: device.ned_id,
+              protocol: device.protocol,
+              latitude: device.latitude,
+              longitude: device.longitude,
+              ned_id: device.ned_id,
+              controller_id: device.controller_id,
+              sub_controller_id: device.sub_controller_id
+            });
+            deviceObj.save(function (err) {
+              if (err) {
+                ErrorFlag = true;
+              }
+              else {
+                ErrorFlag = false;
+              }
+            });
+          });
+
+          if (ErrorFlag) {
+            responseObj.status = 'Error';
+            responseObj.msg = 'Error Occurred while Inserting Device List into MongoDB';
+            responseObj.body = null;
+          } else {
+            responseObj.status = 'Success';
+            responseObj.msg = 'Fetched Data Successfully';
+            responseObj.body = devicelist;
+          }
+        }
+        res.send(responseObj);
+      });
+    }
   });
 });
 
 // Ping Device from Device Manager
 router.post('/ping-device', (req, res) => {
 
-  console.log('POST /ping-device: ', req.body);
+  // console.log('POST /ping-device: ', req.body);
   var redisKey = 'ping-result-' + req.body.pingDeviceInfo.name;
 
   RedisClient.get(redisKey, (err, redisResponse) => {
     if (redisResponse != null) {
 
-      console.log('\nServing data from Redis =>');console.log(redisResponse);
-
-      responseObj.status = 'success';
+      console.log('\nServing data from Redis');
+      responseObj.status = 'Success';
       responseObj.msg = 'Ping Successful';
       responseObj.body = {
         deviceName: req.body.pingDeviceInfo.name,
@@ -293,14 +346,14 @@ router.post('/ping-device', (req, res) => {
       PingDeviceModel.find({ deviceName: req.body.pingDeviceInfo.name }, {}, {}, (err, docs) => {
 
         console.log('Err: ', err);
-        console.log('Docs: ', docs);
+        // console.log('Docs: ', docs);
 
         if (!err && docs && (docs.length > 0)) {
 
           console.log('\nData is present in MongoDB');
 
           RedisClient.set(redisKey, JSON.stringify(docs[0].pingResponse));
-          responseObj.status = 'success';
+          responseObj.status = 'Success';
           responseObj.msg = 'Ping Successful';
           responseObj.body = docs[0];
           res.send(responseObj);
@@ -310,15 +363,14 @@ router.post('/ping-device', (req, res) => {
           postRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/device-manager/devices/ping?nsoInstance=${req.body.nsoInstance}`;
           postRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
           postRequestOptions.body = [req.body.pingDeviceInfo];
-          console.log(postRequestOptions);
-          
-          request(postRequestOptions, function (error, response, [body]) {
-          
+
+          request(postRequestOptions, function (error, response, body) {
+
             console.log('\nResponse Error: ', error);
-            console.log('\nResponse Body: ', body);
-          
+            // console.log('\nResponse Body: ', body);
+
             if (error) {
-              responseObj.status = 'error';
+              responseObj.status = 'Error';
               responseObj.msg = `Error Occurred while Pinging Device. Error Message: ${error}`;
               responseObj.body = null;
               res.send(responseObj);
@@ -330,12 +382,12 @@ router.post('/ping-device', (req, res) => {
 
               pingObj.save(function (err) {
                 if (err) {
-                  responseObj.status = 'error';
+                  responseObj.status = 'Error';
                   responseObj.msg = `Error Occurred while Inserting Ping Device into MongoDB: ${err}`;
                   responseObj.body = null;
                   res.send(responseObj);
                 } else {
-                  responseObj.status = 'success';
+                  responseObj.status = 'Success';
                   responseObj.msg = 'Ping Successful';
                   responseObj.body = {
                     deviceName: req.body.pingDeviceInfo.name,
@@ -634,8 +686,8 @@ app.listen(8080, () => {
 
   connObj = mongoose.createConnection(
     dbUrl, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    }
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  }
   );
 });
