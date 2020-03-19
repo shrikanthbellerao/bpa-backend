@@ -8,6 +8,7 @@ const request = require('request').defaults({ rejectUnauthorized: false });
 const redis = require("redis");
 
 const PingDeviceSchema = require('./ping-device.model').PingDeviceSchema;
+const InstanceDeviceSchema = require('./instance-device.model').InstanceDeviceSchema;
 
 const dbUser = 'bpa';
 const dbPass = 'bpa';
@@ -18,7 +19,7 @@ const dbUrl = `mongodb+srv://${dbUser}:${dbPass}@${dbServer}/${dbName}?retryWrit
 
 var connObj = null;
 
-  // Build the Redis Client
+// Build the Redis Client
 const RedisClient = redis.createClient();
 RedisClient.on('connect', function () {
   console.log('Connected to Redis');
@@ -57,6 +58,15 @@ var getRequestOptions = {
   }
 };
 
+var deleteRequestOptions = {
+  url: '',
+  method: 'DELETE',
+  json: true,
+  headers: {
+    Accept: 'application/json',
+    'Content-Type': 'application/json'
+  }
+};
 var responseObj = {
   status: '',
   msg: '',
@@ -111,8 +121,8 @@ router.post('/service-orders', (req, res) => {
 
   request(getRequestOptions, function (error, response, body) {
 
-    // console.log('\nResponse Error: ', error);
-    // console.log('\nResponse Body: ', body);
+    console.log('\nResponse Error: ', error);
+    console.log('\nResponse Body: ', body);
 
     if (error) {
       responseObj.status = 'error';
@@ -130,15 +140,15 @@ router.post('/service-orders', (req, res) => {
 
 router.post('/service-items', (req, res) => {
 
-  console.log('POST /service-items: ', req.body);
+  // console.log('POST /service-items: ', req.body);
 
   getRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/service-catalog/service-items?_page=1&_limit=20&status=Active&order=asc`;
   getRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
 
   request(getRequestOptions, function (error, response, body) {
 
-    // console.log('\nResponse Error: ', error);
-    // console.log('\nResponse Body: ', body);
+    console.log('\nResponse Error: ', error);
+    console.log('\nResponse Body: ', body);
 
     if (error) {
       responseObj.status = 'error';
@@ -153,27 +163,25 @@ router.post('/service-items', (req, res) => {
   });
 });
 
+//Select favourite items from Service Catalog microservice of BPA
+router.post('/select-favourite', (req, res) => {
 
-//get Devices List for Device Manger Page
-router.post('/device-manager', (req, res) => {
-
-  // console.log('POST /device-manager: ', req.body);
-
-  getRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/device-manager/devices?limit=5000&page=1&nsoInstance=${req.body.nsoInstance}`;
-  getRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
-
-
-  request(getRequestOptions, function (error, response, body) {
+  //const urlActive = `https://${this.vmIPAddress}/bpa/api/v1.0/service-catalog/user-favorites`; 
+  postRequestOptions.url= `https://${req.body.vmIPAddress}/bpa/api/v1.0/service-catalog/user-favorites`;
+  postRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
+  postRequestOptions.body={name:req.body.name}  ;
+  request(postRequestOptions, function (error, response, body) {
 
     // console.log('\nResponse Error: ', error);
     // console.log('\nResponse Body: ', body);
 
     if (error) {
       responseObj.status = 'error';
-      responseObj.msg = `Error Occurred while fetching data. Error Message: ${error}`;
+      responseObj.msg = `Error Occurred while fetching Favourite items. Error Message: ${error}`;
     } else {
       responseObj.status = 'success';
-      responseObj.msg = 'Fetched Data Successfully';
+
+      responseObj.msg = 'Successfully fetched Favourite Service Items';
       responseObj.body = body;
     }
 
@@ -181,18 +189,149 @@ router.post('/device-manager', (req, res) => {
   });
 });
 
+//Delete favourite items from Service Catalog microservice of BPA
+router.post('/delete-favourite', (req, res) => {
+
+  console.log('DELETE /delete-favourite: ', req.body);
+
+  deleteRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/service-catalog/user-favorites/${req.body.id}`;
+  deleteRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
+  
+  request(deleteRequestOptions, function (error, response, body) {
+
+    console.log('\nResponse Error: ', error);
+    console.log('\nResponse Body: ', body);
+
+    if (error) {
+      responseObj.status = 'error';
+      responseObj.msg = `Error Occurred while deleting Favourite items. Error Message: ${error}`;
+    } else {
+      responseObj.status = 'success';
+      responseObj.msg = 'Successfully deleted Favourite Service Items';
+      responseObj.body = body;
+    }
+
+    res.send(responseObj);
+  });
+});
+
+//Fetch list of favourite items from Service Catalog microservice of BPA
+router.post('/get-favourite-items', (req, res) => {
+
+  console.log('POST /get-favourite-items: ', req.body);
+
+  getRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/service-catalog/user-favorites`;
+  getRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
+  
+  request(getRequestOptions, function (error, response, body) {
+
+    console.log('\nResponse Error: ', error);
+    console.log('\nResponse Body: ', body);
+
+    if (error) {
+      responseObj.status = 'error';
+      responseObj.msg = `Error Occurred while fetching list of Favourite items. Error Message: ${error}`;
+    } else {
+      responseObj.status = 'success';
+      responseObj.msg = 'Successfully fetched list of Favourite Service Items';
+      responseObj.body = body;
+    }
+
+    res.send(responseObj);
+  });
+});
+
+//get Devices List for Device Manger Page
+router.post('/device-manager', (req, res) => {
+
+  var ErrorFlag;
+  // console.log('POST /device-manager: ', req.body);
+  const InstanceDeviceModel = connObj.model('instance-device', InstanceDeviceSchema);
+  InstanceDeviceModel.find({}, {}, {}, (err, docs) => {
+    console.log('Error: ', err);
+    // console.log('Docs: ', docs);
+
+    if (!err && docs && (docs.length > 0)) {
+
+      console.log('\nData is present in MongoDB');
+
+      responseObj.status = 'Success';
+      responseObj.msg = 'Fetching Successful';
+      responseObj.body = docs;
+      res.send(responseObj);
+    } else {
+      console.log('\nData is not present in MongoDB');
+
+      getRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/device-manager/devices?limit=5000&page=1&nsoInstance=${req.body.nsoInstance}`;
+      getRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
+
+
+      request(getRequestOptions, function (error, response, devicelist) {
+
+        console.log('\nResponse Error: ', error);
+        // console.log('\nResponse Body: ', body);
+
+        if (error) {
+          responseObj.status = 'Error';
+          responseObj.msg = `Error Occurred while Fetching Device List. Error Message: ${error}`;
+          responseObj.body = null;
+          res.send(responseObj);
+        } else {
+
+          devicelist.forEach(device => {
+            var deviceObj = new InstanceDeviceModel({
+              name: device.name,
+              description: device.description,
+              address: device.address,
+              port: '22',
+              authgroup: device.authgroup,
+              admin_state: device.admin_state,
+              device_type: device.device_type,
+              ned_id: device.ned_id,
+              protocol: device.protocol,
+              latitude: device.latitude,
+              longitude: device.longitude,
+              ned_id: device.ned_id,
+              controller_id: device.controller_id,
+              sub_controller_id: device.sub_controller_id
+            });
+            deviceObj.save(function (err) {
+              if (err) {
+                ErrorFlag = true;
+              }
+              else {
+                ErrorFlag = false;
+              }
+            });
+          });
+
+          if (ErrorFlag) {
+            responseObj.status = 'Error';
+            responseObj.msg = 'Error Occurred while Inserting Device List into MongoDB';
+            responseObj.body = null;
+          } else {
+            responseObj.status = 'Success';
+            responseObj.msg = 'Fetched Data Successfully';
+            responseObj.body = devicelist;
+          }
+        }
+        res.send(responseObj);
+      });
+    }
+  });
+});
+
 // Ping Device from Device Manager
 router.post('/ping-device', (req, res) => {
 
-  console.log('POST /ping-device: ', req.body);
+  // console.log('POST /ping-device: ', req.body);
   var redisKey = 'ping-result-' + req.body.pingDeviceInfo.name;
 
   RedisClient.get(redisKey, (err, redisResponse) => {
     if (redisResponse != null) {
 
-      console.log('\nServing data from Redis =>');console.log(redisResponse);
-
-      responseObj.status = 'success';
+      console.log('\nServing data from Redis');
+      responseObj.status = 'Success';
       responseObj.msg = 'Ping Successful';
       responseObj.body = {
         deviceName: req.body.pingDeviceInfo.name,
@@ -208,14 +347,14 @@ router.post('/ping-device', (req, res) => {
       PingDeviceModel.find({ deviceName: req.body.pingDeviceInfo.name }, {}, {}, (err, docs) => {
 
         console.log('Err: ', err);
-        console.log('Docs: ', docs);
+        // console.log('Docs: ', docs);
 
         if (!err && docs && (docs.length > 0)) {
 
           console.log('\nData is present in MongoDB');
 
           RedisClient.set(redisKey, JSON.stringify(docs[0].pingResponse));
-          responseObj.status = 'success';
+          responseObj.status = 'Success';
           responseObj.msg = 'Ping Successful';
           responseObj.body = docs[0];
           res.send(responseObj);
@@ -225,15 +364,14 @@ router.post('/ping-device', (req, res) => {
           postRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/device-manager/devices/ping?nsoInstance=${req.body.nsoInstance}`;
           postRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
           postRequestOptions.body = [req.body.pingDeviceInfo];
-          console.log(postRequestOptions);
-          
-          request(postRequestOptions, function (error, response, [body]) {
-          
+
+          request(postRequestOptions, function (error, response, body) {
+
             console.log('\nResponse Error: ', error);
-            console.log('\nResponse Body: ', body);
-          
+            // console.log('\nResponse Body: ', body);
+
             if (error) {
-              responseObj.status = 'error';
+              responseObj.status = 'Error';
               responseObj.msg = `Error Occurred while Pinging Device. Error Message: ${error}`;
               responseObj.body = null;
               res.send(responseObj);
@@ -245,12 +383,12 @@ router.post('/ping-device', (req, res) => {
 
               pingObj.save(function (err) {
                 if (err) {
-                  responseObj.status = 'error';
+                  responseObj.status = 'Error';
                   responseObj.msg = `Error Occurred while Inserting Ping Device into MongoDB: ${err}`;
                   responseObj.body = null;
                   res.send(responseObj);
                 } else {
-                  responseObj.status = 'success';
+                  responseObj.status = 'Success';
                   responseObj.msg = 'Ping Successful';
                   responseObj.body = {
                     deviceName: req.body.pingDeviceInfo.name,
@@ -267,6 +405,102 @@ router.post('/ping-device', (req, res) => {
     }
   });
 });
+
+//Fetch Service Category from Service Catalog microservice of BPA
+router.post('/service-category', (req, res) => {
+
+  // console.log('POST /service-category: ', req.body);
+
+  // getRequestOptions.url =`https://${req.body.vmIPAddress}/bpa/api/v1.0/service-catalog/service-categories?_page=1&_limit=200000`;
+  // getRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
+
+  // request(getRequestOptions, function (error, response, body) {
+
+    // console.log('\n Response Error: ', error);
+    // console.log('\n Response Body: ', body);
+
+    // if (error) {
+    //   responseObj.status = 'error';
+    //   responseObj.msg = `Error Occurred while fetching Service Categories. Error Message: ${error}`;
+    // } else {
+    responseObj.status = 'success';
+    responseObj.msg = 'Successfully fetched Service Categories';
+    responseObj.body = [
+    {
+      "_id": "5e43a65d0a5e10018ff9cc06",
+      "updatedAt": "2020-02-12T07:16:45.595Z",
+      "createdAt": "2020-02-12T07:16:45.595Z",
+      "name": "Enterprise Services",
+      "description": "Enterprise Services",
+      "__v": 0,
+      "status": "Active",
+      "parentId": "0"
+    },
+    {
+      "_id": "5e43a65dde78ef018a9948c1",
+      "updatedAt": "2020-02-12T07:16:45.634Z",
+      "createdAt": "2020-02-12T07:16:45.634Z",
+      "name": "Core Services",
+      "description": "Core Services",
+      "__v": 0,
+      "status": "Active",
+      "parentId": "0"
+    },
+    {
+      "_id": "5e43a65d0a5e10018ff9cc07",
+      "updatedAt": "2020-02-12T07:16:45.674Z",
+      "createdAt": "2020-02-12T07:16:45.674Z",
+      "name": "Collaboration Services",
+      "description": "Services to update and add collaboration features",
+      "__v": 0,
+      "status": "Active",
+      "parentId": "0"
+    },
+    {
+      "_id": "5e43a65dde78ef018a9948c2",
+      "updatedAt": "2020-02-12T07:16:45.731Z",
+      "createdAt": "2020-02-12T07:16:45.731Z",
+      "name": "Branch Services",
+      "description": "Branch Services",
+      "__v": 0,
+      "status": "Active",
+      "parentId": "0"
+    },
+    {
+      "_id": "5e43a65d0a5e10018ff9cc08",
+      "updatedAt": "2020-02-12T07:16:45.754Z",
+      "createdAt": "2020-02-12T07:16:45.754Z",
+      "name": "Common Services",
+      "description": "Common Services",
+      "__v": 0,
+      "status": "Active",
+      "parentId": "0"
+    },
+    {
+      "_id": "5e43a65dde78ef018a9948c3",
+      "updatedAt": "2020-02-12T07:16:45.801Z",
+      "createdAt": "2020-02-12T07:16:45.801Z",
+      "name": "Data Center Services",
+      "description": "Data Center Services",
+      "__v": 0,
+      "status": "Active",
+      "parentId": "0"
+    },
+    {
+      "_id": "5e43a65d0a5e10018ff9cc09",
+      "updatedAt": "2020-02-12T07:16:45.823Z",
+      "createdAt": "2020-02-12T07:16:45.823Z",
+      "name": "DMZ Services",
+      "description": "DMZ Services",
+      "__v": 0,
+      "status": "Active",
+      "parentId": "0"
+    }
+  ];
+  
+   res.send(responseObj);
+});
+
 
 // Return the Broadcast message
 router.get('/broadcast-message', (req, res) => {
@@ -295,8 +529,8 @@ app.listen(8080, () => {
 
   connObj = mongoose.createConnection(
     dbUrl, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    }
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  }
   );
 });

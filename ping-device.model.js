@@ -5,6 +5,9 @@ const ObjectId = Schema.ObjectId;
 const PingDeviceSchema = new Schema({
   deviceName: String,
   pingResponse: String
+},
+{
+  versionKey: false 
 });
 
 const PingDeviceModel = mongoose.model('ping-device', PingDeviceSchema);
