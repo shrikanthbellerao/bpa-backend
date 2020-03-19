@@ -8,7 +8,7 @@ const request = require('request').defaults({ rejectUnauthorized: false });
 const redis = require("redis");
 
 const PingDeviceSchema = require('./ping-device.model').PingDeviceSchema;
-const InstanceDeviceSchema = require('./instance-device.model').InstanceDeviceSchema;
+const DeviceSchema = require('./device.model').DeviceSchema;
 
 const dbUser = 'bpa';
 const dbPass = 'bpa';
@@ -243,8 +243,8 @@ router.post('/device-manager', (req, res) => {
 
   var ErrorFlag;
   // console.log('POST /device-manager: ', req.body);
-  const InstanceDeviceModel = connObj.model('instance-device', InstanceDeviceSchema);
-  InstanceDeviceModel.find({}, {}, {}, (err, docs) => {
+  const DeviceModel = connObj.model('device', DeviceSchema);
+  DeviceModel.find({}, {}, {}, (err, docs) => {
     console.log('Error: ', err);
     // console.log('Docs: ', docs);
 
@@ -276,7 +276,7 @@ router.post('/device-manager', (req, res) => {
         } else {
 
           devicelist.forEach(device => {
-            var deviceObj = new InstanceDeviceModel({
+            var deviceObj = new DeviceModel({
               name: device.name,
               description: device.description,
               address: device.address,
