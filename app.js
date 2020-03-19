@@ -58,6 +58,15 @@ var getRequestOptions = {
   }
 };
 
+var deleteRequestOptions = {
+  url: '',
+  method: 'DELETE',
+  json: true,
+  headers: {
+    Accept: 'application/json',
+    'Content-Type': 'application/json'
+  }
+};
 var responseObj = {
   status: '',
   msg: '',
@@ -151,6 +160,83 @@ router.post('/service-items', (req, res) => {
   });
 });
 
+//Select favourite items from Service Catalog microservice of BPA
+router.post('/select-favourite', (req, res) => {
+
+  //const urlActive = `https://${this.vmIPAddress}/bpa/api/v1.0/service-catalog/user-favorites`; 
+  postRequestOptions.url= `https://${req.body.vmIPAddress}/bpa/api/v1.0/service-catalog/user-favorites`;
+  postRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
+  postRequestOptions.body={name:req.body.name}  ;
+  request(postRequestOptions, function (error, response, body) {
+
+    // console.log('\nResponse Error: ', error);
+    // console.log('\nResponse Body: ', body);
+
+    if (error) {
+      responseObj.status = 'error';
+      responseObj.msg = `Error Occurred while fetching Favourite items. Error Message: ${error}`;
+    } else {
+      responseObj.status = 'success';
+
+      responseObj.msg = 'Successfully fetched Favourite Service Items';
+      responseObj.body = body;
+    }
+
+    res.send(responseObj);
+  });
+});
+
+//Delete favourite items from Service Catalog microservice of BPA
+router.post('/delete-favourite', (req, res) => {
+
+  console.log('DELETE /delete-favourite: ', req.body);
+
+  deleteRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/service-catalog/user-favorites/${req.body.id}`;
+  deleteRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
+  
+  request(deleteRequestOptions, function (error, response, body) {
+
+    console.log('\nResponse Error: ', error);
+    console.log('\nResponse Body: ', body);
+
+    if (error) {
+      responseObj.status = 'error';
+      responseObj.msg = `Error Occurred while deleting Favourite items. Error Message: ${error}`;
+    } else {
+      responseObj.status = 'success';
+      responseObj.msg = 'Successfully deleted Favourite Service Items';
+      responseObj.body = body;
+    }
+
+    res.send(responseObj);
+  });
+});
+
+//Fetch list of favourite items from Service Catalog microservice of BPA
+router.post('/get-favourite-items', (req, res) => {
+
+  console.log('POST /get-favourite-items: ', req.body);
+
+  getRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/service-catalog/user-favorites`;
+  getRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
+  
+  request(getRequestOptions, function (error, response, body) {
+
+    console.log('\nResponse Error: ', error);
+    console.log('\nResponse Body: ', body);
+
+    if (error) {
+      responseObj.status = 'error';
+      responseObj.msg = `Error Occurred while fetching list of Favourite items. Error Message: ${error}`;
+    } else {
+      responseObj.status = 'success';
+      responseObj.msg = 'Successfully fetched list of Favourite Service Items';
+      responseObj.body = body;
+    }
+
+    res.send(responseObj);
+  });
+});
 
 //get Devices List for Device Manger Page
 router.post('/device-manager', (req, res) => {
@@ -316,6 +402,102 @@ router.post('/ping-device', (req, res) => {
     }
   });
 });
+
+//Fetch Service Category from Service Catalog microservice of BPA
+router.post('/service-category', (req, res) => {
+
+  // console.log('POST /service-category: ', req.body);
+
+  // getRequestOptions.url =`https://${req.body.vmIPAddress}/bpa/api/v1.0/service-catalog/service-categories?_page=1&_limit=200000`;
+  // getRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
+
+  // request(getRequestOptions, function (error, response, body) {
+
+    // console.log('\n Response Error: ', error);
+    // console.log('\n Response Body: ', body);
+
+    // if (error) {
+    //   responseObj.status = 'error';
+    //   responseObj.msg = `Error Occurred while fetching Service Categories. Error Message: ${error}`;
+    // } else {
+    responseObj.status = 'success';
+    responseObj.msg = 'Successfully fetched Service Categories';
+    responseObj.body = [
+    {
+      "_id": "5e43a65d0a5e10018ff9cc06",
+      "updatedAt": "2020-02-12T07:16:45.595Z",
+      "createdAt": "2020-02-12T07:16:45.595Z",
+      "name": "Enterprise Services",
+      "description": "Enterprise Services",
+      "__v": 0,
+      "status": "Active",
+      "parentId": "0"
+    },
+    {
+      "_id": "5e43a65dde78ef018a9948c1",
+      "updatedAt": "2020-02-12T07:16:45.634Z",
+      "createdAt": "2020-02-12T07:16:45.634Z",
+      "name": "Core Services",
+      "description": "Core Services",
+      "__v": 0,
+      "status": "Active",
+      "parentId": "0"
+    },
+    {
+      "_id": "5e43a65d0a5e10018ff9cc07",
+      "updatedAt": "2020-02-12T07:16:45.674Z",
+      "createdAt": "2020-02-12T07:16:45.674Z",
+      "name": "Collaboration Services",
+      "description": "Services to update and add collaboration features",
+      "__v": 0,
+      "status": "Active",
+      "parentId": "0"
+    },
+    {
+      "_id": "5e43a65dde78ef018a9948c2",
+      "updatedAt": "2020-02-12T07:16:45.731Z",
+      "createdAt": "2020-02-12T07:16:45.731Z",
+      "name": "Branch Services",
+      "description": "Branch Services",
+      "__v": 0,
+      "status": "Active",
+      "parentId": "0"
+    },
+    {
+      "_id": "5e43a65d0a5e10018ff9cc08",
+      "updatedAt": "2020-02-12T07:16:45.754Z",
+      "createdAt": "2020-02-12T07:16:45.754Z",
+      "name": "Common Services",
+      "description": "Common Services",
+      "__v": 0,
+      "status": "Active",
+      "parentId": "0"
+    },
+    {
+      "_id": "5e43a65dde78ef018a9948c3",
+      "updatedAt": "2020-02-12T07:16:45.801Z",
+      "createdAt": "2020-02-12T07:16:45.801Z",
+      "name": "Data Center Services",
+      "description": "Data Center Services",
+      "__v": 0,
+      "status": "Active",
+      "parentId": "0"
+    },
+    {
+      "_id": "5e43a65d0a5e10018ff9cc09",
+      "updatedAt": "2020-02-12T07:16:45.823Z",
+      "createdAt": "2020-02-12T07:16:45.823Z",
+      "name": "DMZ Services",
+      "description": "DMZ Services",
+      "__v": 0,
+      "status": "Active",
+      "parentId": "0"
+    }
+  ];
+  
+   res.send(responseObj);
+});
+
 
 // Return the Broadcast message
 router.get('/broadcast-message', (req, res) => {
