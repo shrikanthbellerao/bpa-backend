@@ -8,7 +8,6 @@ const request = require('request').defaults({ rejectUnauthorized: false });
 const redis = require("redis");
 
 
-
 // const RedisClient = redis.createClient();
 // RedisClient.on('connect', function() {
 //   console.log('Connected to Redis');
