@@ -267,14 +267,6 @@ router.post('/device-manager', (req, res) => {
 // Ping Device from Device Manager
 router.post('/ping-device', (req, res) => {
 
-  var responseObj = [{
-    "jsonrpc": "2.0",
-    "result": [{
-      "name": "result",
-      "value": "PING 10.122.32.63 (10.122.32.63) 56(84) bytes of data.\n64 bytes from 10.122.32.63: icmp_seq=1 ttl=254 time=0.665 ms\n\n--- 10.122.32.63 ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.665/0.665/0.665/0.000 ms\n"
-    }],
-    "id": 3
-  }];
   console.log('POST /ping-device: ', req.body);
   var redisKey = 'ping-result-' + req.body.pingDeviceInfo.name;
 
