@@ -277,7 +277,7 @@ router.post('/ping-device', (req, res) => {
   }];
   console.log('POST /ping-device: ', req.body);
   var redisKey = 'ping-result-' + req.body.pingDeviceInfo.name;
-  
+
   RedisClient.get(redisKey, (err, redisResponse) => {
     if (redisResponse != null) {
 
