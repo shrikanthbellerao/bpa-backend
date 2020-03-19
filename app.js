@@ -7,14 +7,24 @@ const compression = require('compression');
 const request = require('request').defaults({ rejectUnauthorized: false });
 const redis = require("redis");
 
+const PingDeviceSchema = require('./ping-device.model').PingDeviceSchema;
+const InstanceDeviceSchema = require('./instance-device.model').InstanceDeviceSchema;
 
+const dbUser = 'bpa';
+const dbPass = 'bpa';
+const dbServer = 'bpa-mzccx.mongodb.net';
+const dbName = 'bpa-db';
 
-// const RedisClient = redis.createClient();
-// RedisClient.on('connect', function() {
-//   console.log('Connected to Redis');
-// });
+const dbUrl = `mongodb+srv://${dbUser}:${dbPass}@${dbServer}/${dbName}?retryWrites=true&w=majority`;
 
-const GradesSchema = require('./sample_training.model').GradesSchema;
+var connObj = null;
+
+// Build the Redis Client
+const RedisClient = redis.createClient();
+RedisClient.on('connect', function () {
+  console.log('Connected to Redis');
+});
+
 
 app.use(bodyParser.json({ limit: '10mb' }));    // limit : 10mb is required for File upload
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
@@ -26,12 +36,6 @@ app.use(function (req, res, next) {
 });
 app.use(compression());
 app.use('/', router);
-
-router.get('/', (req, res) => {
-  res.send({
-    msg: 'Hi There!'
-  });
-});
 
 var postRequestOptions = {
   url: '',
@@ -62,17 +66,24 @@ var responseObj = {
 
 var broadcastMessage = 'Site is under construction. Please check later!'
 
+// Test Router
+router.get('/', (req, res) => {
+  res.send({
+    msg: 'Hi There!'
+  });
+});
+
 // Validate User's credentials to access BPA
 router.post('/login', (req, res) => {
 
-  // console.log('POST /login: ', req.body);
+  console.log('POST /login: ', req.body);
 
   postRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/login`;
   postRequestOptions.headers.Authorization = `Basic ${req.body.base64Credential}`;
 
   request(postRequestOptions, function (error, response, body) {
 
-    // console.log('\nResponse Error: ', error);
+    console.log('\nResponse Error: ', error);
     console.log('\nResponse Body: ', body);
 
     if (error) {
@@ -91,15 +102,15 @@ router.post('/login', (req, res) => {
 // Fetch Service Orders from Service Catalog microservice of BPA
 router.post('/service-orders', (req, res) => {
 
-  // console.log('POST /service-orders: ', req.body);
+  console.log('POST /service-orders: ', req.body);
 
   getRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/service-catalog/service-orders`;
   getRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
 
   request(getRequestOptions, function (error, response, body) {
 
-    // console.log('\nResponse Error: ', error);
-    // console.log('\nResponse Body: ', body);
+    console.log('\nResponse Error: ', error);
+    console.log('\nResponse Body: ', body);
 
     if (error) {
       responseObj.status = 'error';
@@ -124,8 +135,8 @@ router.post('/service-items', (req, res) => {
 
   request(getRequestOptions, function (error, response, body) {
 
-    // console.log('\nResponse Error: ', error);
-    // console.log('\nResponse Body: ', body);
+    console.log('\nResponse Error: ', error);
+    console.log('\nResponse Body: ', body);
 
     if (error) {
       responseObj.status = 'error';
@@ -144,229 +155,167 @@ router.post('/service-items', (req, res) => {
 //get Devices List for Device Manger Page
 router.post('/device-manager', (req, res) => {
 
+  var ErrorFlag;
   // console.log('POST /device-manager: ', req.body);
+  const InstanceDeviceModel = connObj.model('instance-device', InstanceDeviceSchema);
+  InstanceDeviceModel.find({}, {}, {}, (err, docs) => {
+    console.log('Error: ', err);
+    // console.log('Docs: ', docs);
+
+    if (!err && docs && (docs.length > 0)) {
+
+      console.log('\nData is present in MongoDB');
+
+      responseObj.status = 'Success';
+      responseObj.msg = 'Fetching Successful';
+      responseObj.body = docs;
+      res.send(responseObj);
+    } else {
+      console.log('\nData is not present in MongoDB');
+
+      getRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/device-manager/devices?limit=5000&page=1&nsoInstance=${req.body.nsoInstance}`;
+      getRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
 
 
-  // getRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/device-manager/devices?limit=5000&page=1&nsoInstance=${req.body.nsoInstance}`;
-  // getRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
+      request(getRequestOptions, function (error, response, devicelist) {
 
-  // console.log(getRequestOptions);
- 
+        console.log('\nResponse Error: ', error);
+        // console.log('\nResponse Body: ', body);
 
-  // request(getRequestOptions, function(error, response, body) {
+        if (error) {
+          responseObj.status = 'Error';
+          responseObj.msg = `Error Occurred while Fetching Device List. Error Message: ${error}`;
+          responseObj.body = null;
+          res.send(responseObj);
+        } else {
 
-    // console.log('\nResponse Error: ', error);
-    // console.log('\nResponse Body: ', body);
+          devicelist.forEach(device => {
+            var deviceObj = new InstanceDeviceModel({
+              name: device.name,
+              description: device.description,
+              address: device.address,
+              port: '22',
+              authgroup: device.authgroup,
+              admin_state: device.admin_state,
+              device_type: device.device_type,
+              ned_id: device.ned_id,
+              protocol: device.protocol,
+              latitude: device.latitude,
+              longitude: device.longitude,
+              ned_id: device.ned_id,
+              controller_id: device.controller_id,
+              sub_controller_id: device.sub_controller_id
+            });
+            deviceObj.save(function (err) {
+              if (err) {
+                ErrorFlag = true;
+              }
+              else {
+                ErrorFlag = false;
+              }
+            });
+          });
 
-    // if (error) {
-    //   responseObj.status  = 'error';
-    //   responseObj.msg     = `Error Occurred while fetching data. Error Message: ${error}`;
-    // } else {
-      responseObj.status  = 'success';
-      responseObj.msg     = 'Fetched Data Successfully';
-      responseObj.body = [
-        {
-            "name": "DC-6509",
-            "description": "physical_WS-C6509-E",
-            "address": "10.122.32.71",
-            "port": "",
-            "authgroup": "dc_aaa",
-            "admin-state": "unlocked",
-            "device-type": "cli",
-            "ned-id": "cisco-ios-cli-6.36",
-            "protocol": "ssh",
-            "latitude": "",
-            "longitude": "",
-            "ned_id": "cisco-ios-cli-6.36:cisco-ios-cli-6.36",
-            "controller_id": "RTP-Core-1",
-            "sub_controller_id": "nso5-lsa3-rd"
-        },
-        {
-            "name": "DC-6509_TEST",
-            "description": "physical_WS-C6509-E_test",
-            "address": "10.122.32.71",
-            "port": "22",
-            "authgroup": "dc_aaa",
-            "admin-state": "unlocked",
-            "device-type": "cli",
-            "ned-id": "cisco-ios-cli-6.36",
-            "protocol": "ssh",
-            "latitude": "",
-            "longitude": "",
-            "ned_id": "cisco-ios-cli-6.36:cisco-ios-cli-6.36",
-            "controller_id": "RTP-Core-1",
-            "sub_controller_id": "nso5-lsa3-rd"
-        },
-        {
-            "name": "DC-N3048",
-            "description": "physical_Nexus3048",
-            "address": "10.122.32.63",
-            "port": "",
-            "authgroup": "dc_aaa",
-            "admin-state": "unlocked",
-            "device-type": "cli",
-            "ned-id": "cisco-nx-cli-5.11",
-            "protocol": "ssh",
-            "latitude": "",
-            "longitude": "",
-            "ned_id": "cisco-nx-cli-5.11:cisco-nx-cli-5.11",
-            "controller_id": "RTP-Core-1",
-            "sub_controller_id": "nso5-lsa3-rd"
-        },
-        {
-            "name": "DC-N5548",
-            "description": "physical_Nexus5548",
-            "address": "10.122.32.65",
-            "port": "",
-            "authgroup": "dc_aaa",
-            "admin-state": "unlocked",
-            "device-type": "cli",
-            "ned-id": "cisco-nx-cli-5.11",
-            "protocol": "ssh",
-            "latitude": "",
-            "longitude": "",
-            "ned_id": "cisco-nx-cli-5.11:cisco-nx-cli-5.11",
-            "controller_id": "RTP-Core-1",
-            "sub_controller_id": "nso5-lsa3-rd"
-        },
-        {
-            "name": "DC-N9272Q",
-            "description": "physical_NexusC9272Q",
-            "address": "10.81.59.17",
-            "port": "22",
-            "authgroup": "dc_local",
-            "admin-state": "unlocked",
-            "device-type": "cli",
-            "ned-id": "cisco-nx-cli-5.11",
-            "protocol": "ssh",
-            "latitude": "",
-            "longitude": "",
-            "ned_id": "cisco-nx-cli-5.11:cisco-nx-cli-5.11",
-            "controller_id": "RTP-Core-1",
-            "sub_controller_id": "nso5-lsa3-rd"
-        },
-        {
-            "name": "DC-N93180",
-            "description": "physical_NexusC93180YC-EX",
-            "address": "10.122.32.67",
-            "port": "22",
-            "authgroup": "dc_local",
-            "admin-state": "unlocked",
-            "device-type": "cli",
-            "ned-id": "cisco-nx-cli-5.15",
-            "protocol": "ssh",
-            "latitude": "",
-            "longitude": "",
-            "ned_id": "cisco-nx-cli-5.15:cisco-nx-cli-5.15",
-            "controller_id": "RTP-Core-1",
-            "sub_controller_id": "nso5-lsa3-rd"
-        },
-        {
-            "name": "DC-N9372",
-            "description": "physical_NexusC9372PX",
-            "address": "10.122.32.66",
-            "port": "22",
-            "authgroup": "dc_aaa",
-            "admin-state": "unlocked",
-            "device-type": "cli",
-            "ned-id": "cisco-nx-cli-5.11",
-            "protocol": "ssh",
-            "latitude": "",
-            "longitude": "",
-            "ned_id": "cisco-nx-cli-5.11:cisco-nx-cli-5.11",
-            "controller_id": "RTP-Core-1",
-            "sub_controller_id": "nso5-lsa3-rd"
-        },
-        {
-            "name": "Robot-N5548",
-            "description": "physical_Nexus5548",
-            "address": "10.122.32.65",
-            "port": "",
-            "authgroup": "dc_aaa",
-            "admin-state": "unlocked",
-            "device-type": "cli",
-            "ned-id": "cisco-nx-cli-5.11",
-            "protocol": "ssh",
-            "latitude": "",
-            "longitude": "",
-            "ned_id": "cisco-nx-cli-5.11:cisco-nx-cli-5.11",
-            "controller_id": "RTP-Core-1",
-            "sub_controller_id": "nso5-lsa3-rd"
-        },
-        {
-            "name": "Tmp-3560",
-            "description": "physical_WS-C3560G-48TS",
-            "address": "10.122.32.204",
-            "port": "",
-            "authgroup": "dc_aaa",
-            "admin-state": "unlocked",
-            "device-type": "cli",
-            "ned-id": "cisco-ios-cli-6.36",
-            "protocol": "ssh",
-            "latitude": "",
-            "longitude": "",
-            "ned_id": "cisco-ios-cli-6.36:cisco-ios-cli-6.36",
-            "controller_id": "RTP-Core-1",
-            "sub_controller_id": "nso5-lsa3-rd"
+          if (ErrorFlag) {
+            responseObj.status = 'Error';
+            responseObj.msg = 'Error Occurred while Inserting Device List into MongoDB';
+            responseObj.body = null;
+          } else {
+            responseObj.status = 'Success';
+            responseObj.msg = 'Fetched Data Successfully';
+            responseObj.body = devicelist;
+          }
         }
-      ];
-    
-
-    res.send(responseObj);
+        res.send(responseObj);
+      });
+    }
   });
-// });
+});
 
 // Ping Device from Device Manager
-
 router.post('/ping-device', (req, res) => {
 
   // console.log('POST /ping-device: ', req.body);
+  var redisKey = 'ping-result-' + req.body.pingDeviceInfo.name;
 
-  // RedisClient.get('ping-result-'+req.body.pingDeviceInfo[0].name,(err,reply) =>
-  // {
+  RedisClient.get(redisKey, (err, redisResponse) => {
+    if (redisResponse != null) {
 
-  //   if(reply!=null){
-  //     var sendData ={
-  //       value:reply
-  //     }
-  //     res.send(sendData);
-  //   }
-  //   else{
+      console.log('\nServing data from Redis');
+      responseObj.status = 'Success';
+      responseObj.msg = 'Ping Successful';
+      responseObj.body = {
+        deviceName: req.body.pingDeviceInfo.name,
+        pingResponse: redisResponse
+      };
+      res.send(responseObj);
+    } else {
+      console.log('\nData is not present in Redis');
+      // var pingResponse = {"name":"result","value":"PING 10.122.32.71 (10.122.32.71) 56(84) bytes of data.\n64 bytes from 10.122.32.71: icmp_seq=1 ttl=254 time=0.588 ms\n\n--- 10.122.32.71 ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.588/0.588/0.588/0.000 ms\n"};
 
-  //     postRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/device-manager/devices/ping?nsoInstance=${req.body.nsoInstance}`;
-  //     postRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
-  //     postRequestOptions.body = req.body.pingDeviceInfo;
-    
-    
-  //     request(postRequestOptions, function(error, response, body) {
+      const PingDeviceModel = connObj.model('ping-device', PingDeviceSchema);
 
-  //       // console.log('\nResponse Error: ', error);
-  //       // console.log('\nResponse Body: ', body);
+      PingDeviceModel.find({ deviceName: req.body.pingDeviceInfo.name }, {}, {}, (err, docs) => {
 
-  //       if (error) {
-  //         responseObj.status  = 'error';
-  //         responseObj.msg     = `Error Occurred while Pinging Device. Error Message: ${error}`;
-  //       } else {
-          responseObj.status  = 'success';
-          responseObj.msg     = 'Ping Successful';
-          responseObj.body    = [{ 
-            "jsonrpc": "2.0", 
-            "result": [{
-            "name": "result", 
-            "value": "PING 10.122.32.63 (10.122.32.63) 56(84) bytes of data.\n64 bytes from 10.122.32.63: icmp_seq=1 ttl=254 time=0.665 ms\n\n--- 10.122.32.63 ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.665/0.665/0.665/0.000 ms\n"
-            }], 
-            "id": 3 
-            }];
-        // }
-    
-        res.send(responseObj);
-        // RedisClient.set('ping-result-'+req.body.pingDeviceInfo[0].name,body[0].result[0].value);
+        console.log('Err: ', err);
+        // console.log('Docs: ', docs);
+
+        if (!err && docs && (docs.length > 0)) {
+
+          console.log('\nData is present in MongoDB');
+
+          RedisClient.set(redisKey, JSON.stringify(docs[0].pingResponse));
+          responseObj.status = 'Success';
+          responseObj.msg = 'Ping Successful';
+          responseObj.body = docs[0];
+          res.send(responseObj);
+        } else {
+          console.log('\nData is not present in MongoDB');
+
+          postRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/device-manager/devices/ping?nsoInstance=${req.body.nsoInstance}`;
+          postRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
+          postRequestOptions.body = [req.body.pingDeviceInfo];
+
+          request(postRequestOptions, function (error, response, body) {
+
+            console.log('\nResponse Error: ', error);
+            // console.log('\nResponse Body: ', body);
+
+            if (error) {
+              responseObj.status = 'Error';
+              responseObj.msg = `Error Occurred while Pinging Device. Error Message: ${error}`;
+              responseObj.body = null;
+              res.send(responseObj);
+            } else {
+              var pingObj = new PingDeviceModel({
+                deviceName: req.body.pingDeviceInfo.name,
+                pingResponse: body.result[0].value
+              });
+
+              pingObj.save(function (err) {
+                if (err) {
+                  responseObj.status = 'Error';
+                  responseObj.msg = `Error Occurred while Inserting Ping Device into MongoDB: ${err}`;
+                  responseObj.body = null;
+                  res.send(responseObj);
+                } else {
+                  responseObj.status = 'Success';
+                  responseObj.msg = 'Ping Successful';
+                  responseObj.body = {
+                    deviceName: req.body.pingDeviceInfo.name,
+                    pingResponse: body.result[0].value
+                  };
+                  RedisClient.set(redisKey, body.result[0].value);
+                  res.send(responseObj);
+                }
+              });
+            }
+          });
+        }
       });
-      
-//     }
-//   });
-
-// });
+    }
+  });
+});
 
 // Return the Broadcast message
 router.get('/broadcast-message', (req, res) => {
@@ -393,12 +342,10 @@ app.listen(8080, () => {
   console.log('Listening on port 8080!');
   console.log('***********************');
 
-  // const dbUrl = "mongodb+srv://bpa:bpa@bpa-mzccx.mongodb.net/sample_training";
-  // const connObj = mongoose.createConnection(dbUrl);
-  // const GradesModel = connObj.model('Grade', GradesSchema);
-
-  // GradesModel.find({}, { }, { limit:2 }, (err, docs) => {
-  //   console.log('Err: ', err);
-  //   console.log('Docs: ', docs);
-  // });
+  connObj = mongoose.createConnection(
+    dbUrl, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  }
+  );
 });
