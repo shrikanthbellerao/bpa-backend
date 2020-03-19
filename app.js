@@ -8,6 +8,25 @@ const request = require('request').defaults({ rejectUnauthorized: false });
 const cors = require('cors');
 app.use(cors());
 const GradesSchema = require('./sample_training.model').GradesSchema;
+const redis = require("redis");
+
+const PingDeviceSchema = require('./ping-device.model').PingDeviceSchema;
+
+const dbUser = 'bpa';
+const dbPass = 'bpa';
+const dbServer = 'bpa-mzccx.mongodb.net';
+const dbName = 'bpa-db';
+
+const dbUrl = `mongodb+srv://${dbUser}:${dbPass}@${dbServer}/${dbName}?retryWrites=true&w=majority`;
+
+var connObj = null;
+
+// Build the Redis Client
+const RedisClient = redis.createClient();
+RedisClient.on('connect', function () {
+  console.log('Connected to Redis');
+});
+
 
 app.use(bodyParser.json({ limit: '10mb' }));    // limit : 10mb is required for File upload
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
@@ -19,12 +38,6 @@ app.use(function (req, res, next) {
 });
 app.use(compression());
 app.use('/', router);
-
-router.get('/', (req, res) => {
-  res.send({
-    msg: 'Hi There!'
-  });
-});
 
 var postRequestOptions = {
   url: '',
@@ -54,6 +67,13 @@ var responseObj = {
 };
 
 var broadcastMessage = 'Site is under construction. Please check later!'
+
+// Test Router
+router.get('/', (req, res) => {
+  res.send({
+    msg: 'Hi There!'
+  });
+});
 
 // Validate User's credentials to access BPA
 router.post('/login', (req, res) => {
@@ -91,8 +111,8 @@ router.post('/service-orders', (req, res) => {
 
   request(getRequestOptions, function (error, response, body) {
 
-    console.log('\nResponse Error: ', error);
-    console.log('\nResponse Body: ', body);
+    // console.log('\nResponse Error: ', error);
+    // console.log('\nResponse Body: ', body);
 
     if (error) {
       responseObj.status = 'error';
@@ -110,20 +130,7 @@ router.post('/service-orders', (req, res) => {
 // Fetch Milestone of Active Services from Service Catalog microservice of BPA
 router.post('/service-orders', (req, res) => {
 
-  //   console.log('POST /service-orders: ', req.body);
 
-  //   getRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/service-catalog/service-orders`;
-  //   getRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
-
-  //   request(getRequestOptions, function (error, response, body) {
-
-  //     console.log('\nResponse Error: ', error);
-  //     console.log('\nResponse Body: ', body);
-
-  //     if (error) {
-  //       responseObj.status = 'error';
-  //       responseObj.msg = `Error Occurred while fetching Service Orders. Error Message: ${error}`;
-  //     } else {
   responseObj.status = 'success';
   responseObj.msg = 'Successfully fetched Service Orders';
   responseObj.body = {
@@ -189,7 +196,85 @@ router.post('/service-orders', (req, res) => {
   };
   // }
 
-  res.send(responseObj);
+  RedisClient.get(redisKey, (err, redisResponse) => {
+    if (redisResponse != null) {
+
+      console.log('\nServing data from Redis =>'); console.log(redisResponse);
+
+      responseObj.status = 'success';
+      responseObj.msg = 'Ping Successful';
+      responseObj.body = {
+        deviceName: req.body.pingDeviceInfo.name,
+        pingResponse: redisResponse
+      };
+      res.send(responseObj);
+    } else {
+      console.log('\nData is not present in Redis');
+      // var pingResponse = {"name":"result","value":"PING 10.122.32.71 (10.122.32.71) 56(84) bytes of data.\n64 bytes from 10.122.32.71: icmp_seq=1 ttl=254 time=0.588 ms\n\n--- 10.122.32.71 ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.588/0.588/0.588/0.000 ms\n"};
+
+      const PingDeviceModel = connObj.model('ping-device', PingDeviceSchema);
+
+      PingDeviceModel.find({ deviceName: req.body.pingDeviceInfo.name }, {}, {}, (err, docs) => {
+
+        console.log('Err: ', err);
+        console.log('Docs: ', docs);
+
+        if (!err && docs && (docs.length > 0)) {
+
+          console.log('\nData is present in MongoDB');
+
+          RedisClient.set(redisKey, JSON.stringify(docs[0].pingResponse));
+          responseObj.status = 'success';
+          responseObj.msg = 'Ping Successful';
+          responseObj.body = docs[0];
+          res.send(responseObj);
+        } else {
+          console.log('\nData is not present in MongoDB');
+
+          postRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/device-manager/devices/ping?nsoInstance=${req.body.nsoInstance}`;
+          postRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
+          postRequestOptions.body = [req.body.pingDeviceInfo];
+          console.log(postRequestOptions);
+
+          request(postRequestOptions, function (error, response, [body]) {
+
+            console.log('\nResponse Error: ', error);
+            console.log('\nResponse Body: ', body);
+
+            if (error) {
+              responseObj.status = 'error';
+              responseObj.msg = `Error Occurred while Pinging Device. Error Message: ${error}`;
+              responseObj.body = null;
+              res.send(responseObj);
+            } else {
+              var pingObj = new PingDeviceModel({
+                deviceName: req.body.pingDeviceInfo.name,
+                pingResponse: body.result[0].value
+              });
+
+              pingObj.save(function (err) {
+                if (err) {
+                  responseObj.status = 'error';
+                  responseObj.msg = `Error Occurred while Inserting Ping Device into MongoDB: ${err}`;
+                  responseObj.body = null;
+                  res.send(responseObj);
+                } else {
+                  responseObj.status = 'success';
+                  responseObj.msg = 'Ping Successful';
+                  responseObj.body = {
+                    deviceName: req.body.pingDeviceInfo.name,
+                    pingResponse: body.result[0].value
+                  };
+                  RedisClient.set(redisKey, body.result[0].value);
+                  res.send(responseObj);
+                }
+              });
+            }
+          });
+        }
+      });
+    }
+  });
 });
 // });
 
@@ -210,3 +295,10 @@ app.listen(8080, () => {
   //   console.log('Docs: ', docs);
   // });
 });
+connObj = mongoose.createConnection(
+  dbUrl, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+}
+);
+
