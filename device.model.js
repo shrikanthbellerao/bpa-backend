@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 
-const InstanceDeviceSchema = new Schema({
+const DeviceSchema = new Schema({
     name: String,
     description: String,
     address: String,
@@ -22,6 +22,6 @@ const InstanceDeviceSchema = new Schema({
     versionKey: false 
 });
 
-const InstanceDeviceModel = mongoose.model('instance-device', InstanceDeviceSchema);
-module.exports = InstanceDeviceSchema;
-module.exports = InstanceDeviceModel;
+const DeviceModel = mongoose.model('device', DeviceSchema);
+module.exports = DeviceSchema;
+module.exports = DeviceModel;
