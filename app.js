@@ -8,6 +8,8 @@ const request = require('request').defaults({ rejectUnauthorized: false });
 const redis = require("redis");
 
 const PingDeviceSchema = require('./ping-device.model').PingDeviceSchema;
+const ServiceCategorySchema = require('./service-category.model').ServiceCategorySchema;
+const ServiceItemsSchema = require('./service-item.model').ServiceItemsSchema;
 const DeviceSchema = require('./device.model').DeviceSchema;
 
 // const RedisClient = redis.createClient();
@@ -13353,6 +13355,164 @@ router.post('/ping-device', (req, res) => {
   });
 });
 
+// //To fetch Service Categories
+// router.post('/service-category', (req, res) => {
+
+//   console.log('POST /service-category: ', req.body);
+//  // var redisKey = 'ping-result-' + req.body.pingDeviceInfo.name;
+
+//   // RedisClient.get(redisKey, (err, redisResponse) => {
+//   //   if (redisResponse != null) {
+
+//   //     console.log('\nServing data from Redis =>');console.log(redisResponse);
+
+//   //     responseObj.status = 'success';
+//   //     responseObj.msg = 'Ping Successful';
+//   //     responseObj.body = {
+//   //       deviceName: req.body.pingDeviceInfo.name,
+//   //       pingResponse: redisResponse
+//   //     };
+//   //     res.send(responseObj);
+//   //   } else {
+//    //   console.log('\nData is not present in Redis');
+//       // var pingResponse = {"name":"result","value":"PING 10.122.32.71 (10.122.32.71) 56(84) bytes of data.\n64 bytes from 10.122.32.71: icmp_seq=1 ttl=254 time=0.588 ms\n\n--- 10.122.32.71 ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.588/0.588/0.588/0.000 ms\n"};
+
+//       const ServiceCategoryModel = connObj.model('/service-category', ServiceCategorySchema);
+
+//       ServiceCategoryModel.find({}, {}, {}, (err, docs) => {
+
+//         console.log('Err: ', err);
+//         console.log('Docs: ', docs);
+
+//         if (!err && docs && (docs.length > 0)) {
+
+//           console.log('\nData is present in MongoDB');
+
+//           RedisClient.set(redisKey, JSON.stringify(docs[0].pingResponse));
+//           responseObj.status = 'success';
+//           responseObj.msg = 'Service Categories Successfully fetched';
+//           responseObj.body = docs[0];
+//           res.send(responseObj);
+//         } else {
+//           console.log('\nData is not present in MongoDB');
+
+//         getRequestOptions.url =`https://${req.body.vmIPAddress}/bpa/api/v1.0/service-catalog/service-categories?_page=1&_limit=200000`;
+//         getRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
+//           postRequestOptions.body = [req.body.pingDeviceInfo];
+//           console.log(postRequestOptions);
+          
+//           request(postRequestOptions, function (error, response, [body]) {
+          
+//             console.log('\nResponse Error: ', error);
+//             console.log('\nResponse Body: ', body);
+          
+//             if (error) {
+//               responseObj.status = 'error';
+//               responseObj.msg = `Error Occurred while Pinging Device. Error Message: ${error}`;
+//               responseObj.body = null;
+//               res.send(responseObj);
+//             } else {
+//               var pingObj = new PingDeviceModel({
+//                 deviceName: req.body.pingDeviceInfo.name,
+//                 pingResponse: body.result[0].value
+//               });
+
+//               pingObj.save(function (err) {
+//                 if (err) {
+//                   responseObj.status = 'error';
+//                   responseObj.msg = `Error Occurred while Inserting Ping Device into MongoDB: ${err}`;
+//                   responseObj.body = null;
+//                   res.send(responseObj);
+//                 } else {
+//                   responseObj.status = 'success';
+//                   responseObj.msg = 'Ping Successful';
+//                   responseObj.body = {
+//                     deviceName: req.body.pingDeviceInfo.name,
+//                     pingResponse: body.result[0].value
+//                   };
+//                   RedisClient.set(redisKey, body.result[0].value);
+//                   res.send(responseObj);
+//                 }
+//               });
+//             }
+//           });
+//         }
+//       });
+//     }
+//   });
+// });
+
+// Fetch Milestone of Active Services from Service Catalog microservice of BPA
+router.post('/milestone', (req, res) => {
+
+
+responseObj.status = 'success';
+responseObj.msg = 'Successfully fetched Milestones';
+responseObj.body = {
+"status": "Success",
+"message": "Milestones List",
+"totalRecords": 10,
+"data": [
+{
+"_id": "5e72223b34ac5c0166164910",
+"updatedAt": "2020-03-18T13:29:31.773Z",
+"createdAt": "2020-03-18T13:29:31.773Z",
+"objectType": "service-catalog-order",
+"objectReference": "5e72223ae3c240015092efbb",
+"milestone": "Check-Sync I",
+"__v": 0,
+"status": "Complete"
+},
+{
+"_id": "5e72223c34ac5c0166164911",
+"updatedAt": "2020-03-18T13:29:32.152Z",
+"createdAt": "2020-03-18T13:29:32.152Z",
+"objectType": "service-catalog-order",
+"objectReference": "5e72223ae3c240015092efbb",
+"milestone": "Dryrun Review I",
+"__v": 0,
+"execution": {
+"type": "dryrun",
+"executionData": "5e722349104a5741c775e16a",
+"templateId": "Dry-Run"
+},
+"status": "Complete"
+},
+{
+"_id": "5e72223c34ac5c0166164912",
+"updatedAt": "2020-03-18T13:29:32.287Z",
+"createdAt": "2020-03-18T13:29:32.287Z",
+"objectType": "service-catalog-order",
+"objectReference": "5e72223ae3c240015092efbb",
+"milestone": "Peer review",
+"__v": 0,
+"execution": {
+"type": "peer-review",
+"executionData": "5e72223ae3c240015092efbb",
+"templateId": "Peer Review"
+},
+"status": "Complete"
+},
+{
+"_id": "5e72223c34ac5c0166164913",
+"updatedAt": "2020-03-18T13:29:32.397Z",
+"createdAt": "2020-03-18T13:29:32.397Z",
+"objectType": "service-catalog-order",
+"objectReference": "5e72223ae3c240015092efbb",
+"milestone": "Pre-change Validation",
+"__v": 0,
+"execution": {
+"type": "template-execution",
+"executionData": "[{\"deviceName\":\"USPALTWRR01DRE0001-PV01\",\"executionId\":\"5e7229f60d2df741cc8e510d\",\"overallTmplResult\":false}]",
+"templateId": "DC-MSC-Port-Turn-Down-Pre-Check-Validation"
+},
+"status": "Complete"
+}]
+}
+res.send(
+responseObj
+)
+})
 //Fetch Service Category from Service Catalog microservice of BPA
 router.post('/service-category', (req, res) => {
 
