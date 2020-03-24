@@ -166,7 +166,7 @@ methods.getDevices = (vmIPAddress, nsoInstance, accessToken) => {
                     } else {
 
 
-                        DeviceLoop(devicelist, DeviceModel).then((ErrorFlag) => {
+                        DbDeviceLoop(devicelist, DeviceModel).then((ErrorFlag) => {
                             if (ErrorFlag) {
                                 responseObj.status = 'Error';
                                 responseObj.msg = 'Error Occurred while Inserting Device List into MongoDB';
@@ -189,7 +189,7 @@ methods.getDevices = (vmIPAddress, nsoInstance, accessToken) => {
     });
 }
 
-var DeviceLoop = (devicelist, DeviceModel) => {
+var DbDeviceLoop = (devicelist, DeviceModel) => {
     return new Promise(async (resolve, reject) => {
         var deviceLength = devicelist.length
         var errorflag;
