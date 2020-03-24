@@ -70,6 +70,7 @@ methods.pingDevice = (deviceName, vmIPAddress, nsoInstance, accessToken, pingDev
                 resolve(responseObj);
             }
             else {
+                console.log('Device Manager : Ping Data is not present in Redis');
                 PingDeviceModel.find({ deviceName: deviceName }, {}, {}, (error, docs) => {
 
                     console.log('Device Manager : Pind Device MongoDB Error - ', error);

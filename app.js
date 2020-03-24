@@ -8,10 +8,9 @@ const request = require('request').defaults({ rejectUnauthorized: false });
 const redis = require("redis");
 const deviceManager = require('./controller/device-manager').DeviceManagerData;
 
-const PingDeviceSchema = require('./model/ping-device.model').PingDeviceSchema;
 const ServiceCategorySchema = require('./model/service-category.model').ServiceCategorySchema;
 const ServiceItemsSchema = require('./model/service-item.model').ServiceItemsSchema;
-const DeviceSchema = require('./model/device.model').DeviceSchema;
+
 
 // const RedisClient = redis.createClient();
 // RedisClient.on('connect', function() {
