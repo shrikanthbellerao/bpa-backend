@@ -1,12 +1,12 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-const ObjectId = Schema.ObjectId;
 
 const ServiceCategorySchema = new Schema({
-  deviceName: String,
-  pingResponse: String
+  _id: String,
+  name: String,
+  description: String
 });
 
-const ServiceCategoryModel = mongoose.model('service-category', ServiceCategorySchema);
+const ServiceCategoryModel = mongoose.model('category-service', ServiceCategorySchema);
 module.exports = ServiceCategorySchema;
 module.exports = ServiceCategoryModel;
