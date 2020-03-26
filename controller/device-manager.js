@@ -6,7 +6,7 @@ const DeviceSchema = require('../model/device.model').DeviceSchema;
 
 
 const DeviceRedisClient = redis.createClient();
-DeviceRedisClient.on('connect', ()=>{ console.log('Device Manager : Connected to Redis')});
+DeviceRedisClient.on('connect', () => { console.log('Device Manager : Connected to Redis') });
 var postRequestOptions = {
     url: '',
     method: 'POST',
