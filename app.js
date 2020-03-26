@@ -7,10 +7,10 @@ const compression = require('compression');
 const request = require('request').defaults({ rejectUnauthorized: false });
 const redis = require("redis");
 const deviceManager = require('./controller/device-manager').DeviceManagerData;
-
 const ServiceCategorySchema = require('./model/category-service.model').ServiceCategorySchema;
+const OrderSchema = require('./model/order.model');
 const ServiceItemsSchema = require('./model/service-item.model').ServiceItemsSchema;
-
+const Schema = mongoose.Schema;
 // const RedisClient = redis.createClient();
 // RedisClient.on('connect', function() {
 //   console.log('Connected to Redis');
@@ -11596,6 +11596,48 @@ router.post('/device-manager', async (req, res) => {
     res.send(DeviceData);
   
   });
+
+//get formdata from Order page
+router.post('/orders',(req,res)=>{
+        console.log(req.body);
+        
+        var OrderData= req.body;
+        const OrderSchema = connObj.model('order',OrderSchema);
+
+                // OrderData.formData.forEach((form) => {
+            var orderdetails=new OrderSchema({
+                formDetails:OrderData.formData
+                // action:form.action,
+                // vlan_type:form.vlan,
+                // vlan_id:form.vlanid,
+                // vlan_name:form.vlannm,
+                // vlan_description:form.vlandes,
+                // mtu:form.mtu,
+                // ip_address:form.ipadd,
+                // peer_ip_address:form.pipadd,
+                // hsrp_number:form.hsrpnum,
+                // hsrp_ip:form.hsrpstandip,
+                // hostname:form.hostnm,
+                // peer__hostname:form.peers,
+                // dhcp_server:form.dhcpserver,
+                // interface:form.interfnums
+        
+            });
+    
+            orderdetails.save(function(err, order){
+                console.log('ganesh',err,order);
+                res.json({orderNumber : order._id});
+            //     if(err)
+            //     // res.send('show_message',{message : "Database error", type:"error"});
+            //     else
+            //     res.send('show_message',{ message:"success",type:"success",orders:order});
+            });
+        // })
+           
+    
+        
+        
+});
 
 // Ping Device from Device Manager
 router.post('/ping-device', async (req, res) => {
