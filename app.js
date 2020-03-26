@@ -11679,7 +11679,7 @@ router.post('/service-item', async(req, res) => {
 
     var itemData = await serviceItems.getServiceItems(req.body.vmIPAddress,req.body.nsoInstance,req.body.accessToken);
     res.send(itemData);
-
+});
     // console.log('POST /service-item: ', req.body);
     // const ServiceItemsModel = connObj.model('service-item', ServiceItemsSchema);
 
@@ -11748,7 +11748,6 @@ router.post('/service-item', async(req, res) => {
             
     //     }
     // });
-});
 
 // Fetch Milestone of Active Services from Service Catalog microservice of BPA
 router.post('/milestone', (req, res) => {
