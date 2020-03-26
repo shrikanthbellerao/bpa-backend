@@ -11560,7 +11560,7 @@ router.post('/service-order', async (req, res) => {
 //get Milestones for Active Services Page
 router.post('/milestone', async (req, res) => {
 
-    var MilestoneData = await activeService.getMilestones( req);
+    var MilestoneData = await activeService.getMilestones(req);
     res.send(MilestoneData);
 
 });

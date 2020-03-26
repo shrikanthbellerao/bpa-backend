@@ -53,7 +53,7 @@ var methods = {};
 methods.getOrders = (vmIPAddress, accessToken) => {
     return new Promise((resolve, reject) => {
         const ServiceOrderModel = connObj.model('service-order', ServiceOrderSchema);
-    ServiceOrderModel.find({}, {}, {}, (error, docs) => {
+        ServiceOrderModel.find({}, {}, {}, (error, docs) => {
             console.log('Service Orders : Service Orders MongoDB Error - ', error);
 
             if (!error && docs && (docs.length > 0)) {
@@ -64,7 +64,7 @@ methods.getOrders = (vmIPAddress, accessToken) => {
                 responseObj.msg = 'Successfully fetched Service Orders';
                 responseObj.body = docs;
                 resolve(responseObj);
-            } else{
+            } else {
                 console.log('\nData is not present in MongoDB');
                 getRequestOptions.url = `https://${vmIPAddress}/bpa/api/v1.0/service-catalog/service-orders`;
                 getRequestOptions.headers.Authorization = `Bearer ${accessToken}`;
@@ -107,8 +107,8 @@ var DbOrderLoop = (rowData, ServiceOrderModel) => {
         var orderLength = rowData.length
         var errorflag;
         for (i = 0; i < orderLength; i++) {
-        // serviceOrder.data.forEach(order => {
-        //     console.log('order res',serviceOrder);
+            // serviceOrder.data.forEach(order => {
+            //     console.log('order res',serviceOrder);
             var serviceOrderObj = new ServiceOrderModel({
                 orderNumber: rowData[i].orderNumber,
                 _id: rowData[i]._id,

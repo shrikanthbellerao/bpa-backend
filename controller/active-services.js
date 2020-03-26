@@ -52,7 +52,7 @@ var methods = {};
 methods.getMilestones = (req) => {
     return new Promise((resolve, reject) => {
         const MilestoneModel = connObj.model('milestone', MilestoneSchema);
-    MilestoneModel.find({ _id: req.body.id }, {}, {}, (error, docs) => {
+        MilestoneModel.find({ _id: req.body.id }, {}, {}, (error, docs) => {
             console.log('Active Services : Milestone MongoDB Error - ', error);
 
             if (!error && docs && (docs.length > 0)) {
@@ -60,8 +60,8 @@ methods.getMilestones = (req) => {
                 console.log('Active Services : Serving Milestones from MongoDB');
 
                 responseObj.status = 'Success';
-            responseObj.msg = 'Successfully fetched milestones';
-            responseObj.body = docs[0].milestone;
+                responseObj.msg = 'Successfully fetched milestones';
+                responseObj.body = docs[0].milestone;
                 resolve(responseObj);
             } else {
                 console.log('Active Services : Milestone is not present in MongoDB');
@@ -112,7 +112,7 @@ var DbDeviceLoop = (milestone, MilestoneModel, id) => {
             _id: id
         });
         errorflag = await dbSave(milestoneObj)
-            
+
 
         resolve(errorflag);
     })
