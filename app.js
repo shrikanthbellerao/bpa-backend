@@ -5,6 +5,9 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const compression = require('compression');
 const request = require('request').defaults({ rejectUnauthorized: false });
+const cors = require('cors');
+app.use(cors());
+const GradesSchema = require('./sample_training.model').GradesSchema;
 const redis = require("redis");
 const deviceManager = require('./controller/device-manager').DeviceManagerData;
 const serviceOrder = require('./controller/service-order').ServiceOrderData;
@@ -11706,6 +11709,7 @@ router.post('/service-item', (req, res) => {
         }
     });
 });
+// });
 
 
 
