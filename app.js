@@ -7,19 +7,20 @@ const compression = require('compression');
 const request = require('request').defaults({ rejectUnauthorized: false });
 const redis = require("redis");
 const deviceManager = require('./controller/device-manager').DeviceManagerData;
-const appConfig = require('./controller/app-config')
+
 const ServiceCategorySchema = require('./model/category-service.model').ServiceCategorySchema;
 const ServiceItemsSchema = require('./model/service-item.model').ServiceItemsSchema;
 const serviceOrder = require('./controller/service-order').ServiceOrderData;
 const activeService = require('./controller/active-services').ActiveServiceData;
 const cors = require('cors');
 
-
+// const RedisClient = redis.createClient();
+// RedisClient.on('connect', function() {
+//   console.log('Connected to Redis');
+// });
 app.use(cors({
     origin: 'http://localhost:4200'
 }))
-
-
 const dbUser = 'bpa';
 const dbPass = 'bpa';
 const dbServer = 'bpa-mzccx.mongodb.net';
@@ -83,7 +84,7 @@ var responseObj = {
     body: null
 };
 
-
+var broadcastMessage = 'Site is under construction. Please check later!'
 
 // Test Router
 router.get('/', (req, res) => {
@@ -102,10 +103,10 @@ router.post('/login', (req, res) => {
 
     request(postRequestOptions, function (error, response, body) {
 
-         console.log('\nResponse Error: ', error);
+        console.log('\nResponse Error: ', error);
         console.log('\nResponse Body: ', body);
 
-        if (body.errCode === 403) {
+        if (error) {
             responseObj.status = 'error';
             responseObj.msg = `Error Occurred while validating User's credentials. Error Message: ${error}`;
         } else {
@@ -117,9 +118,6 @@ router.post('/login', (req, res) => {
         res.send(responseObj);
     });
 });
-
-
-
 
 // Fetch Service Orders from Service Catalog microservice of BPA
 router.post('/service-orders', (req, res) => {
@@ -11511,104 +11509,38 @@ router.post('/select-favourite', (req, res) => {
 
     console.log('POST /select-favourite: ', req.body);
     const ServiceItemsModel = connObj.model('service-item', ServiceItemsSchema);
-    ServiceItemsModel.update({'_id':req.body.id},{$set:{'flag':true}},(err,data)=>{
-        console.log('res1',err),
-        console.log('res2',data);
-        res.json({status:'service item successfully selected as favourite'})
+    ServiceItemsModel.update({ '_id': req.body.id }, { $set: { 'flag': true } }, (err, data) => {
+        console.log('res1', err),
+            console.log('res2', data);
+        res.json({ status: 'service item successfully selected as favourite' })
     })
-    
+
 });
 router.post('/delete-favourite', (req, res) => {
 
     console.log('POST /delete-favourite: ', req.body);
     const ServiceItemsModel = connObj.model('service-item', ServiceItemsSchema);
-    ServiceItemsModel.update({'_id':req.body.id},{$set:{'flag':false}},(err,data)=>{
-        console.log('res1',err),
-        console.log('res2',data);
-        res.json({status:'service item successfully deleted from favourite list'})
+    ServiceItemsModel.update({ '_id': req.body.id }, { $set: { 'flag': false } }, (err, data) => {
+        console.log('res1', err),
+            console.log('res2', data);
+        res.json({ status: 'service item successfully deleted from favourite list' })
     })
-    
-});
 
-// Fetch Milestone of Active Services from Service Catalog microservice of BPA
-router.post('/milestone', (req, res) => {
-
-    responseObj.status = 'success';
-    responseObj.msg = 'Successfully fetched Milestones';
-    responseObj.body = [
-        {
-            "_id": "5e72223b34ac5c0166164910",
-            "updatedAt": "2020-03-18T13:29:31.773Z",
-            "createdAt": "2020-03-18T13:29:31.773Z",
-            "objectType": "service-catalog-order",
-            "objectReference": "5e72223ae3c240015092efbb",
-            "milestone": "Check-Sync I",
-            "__v": 0,
-            "status": "Complete"
-        },
-        {
-            "_id": "5e72223c34ac5c0166164911",
-            "updatedAt": "2020-03-18T13:29:32.152Z",
-            "createdAt": "2020-03-18T13:29:32.152Z",
-            "objectType": "service-catalog-order",
-            "objectReference": "5e72223ae3c240015092efbb",
-            "milestone": "Dryrun Review I",
-            "__v": 0,
-            "execution": {
-                "type": "dryrun",
-                "executionData": "5e722349104a5741c775e16a",
-                "templateId": "Dry-Run"
-            },
-            "status": "Complete"
-        },
-        {
-            "_id": "5e72223c34ac5c0166164912",
-            "updatedAt": "2020-03-18T13:29:32.287Z",
-            "createdAt": "2020-03-18T13:29:32.287Z",
-            "objectType": "service-catalog-order",
-            "objectReference": "5e72223ae3c240015092efbb",
-            "milestone": "Peer review",
-            "__v": 0,
-            "execution": {
-                "type": "peer-review",
-                "executionData": "5e72223ae3c240015092efbb",
-                "templateId": "Peer Review"
-            },
-            "status": "Complete"
-        },
-        {
-            "_id": "5e72223c34ac5c0166164913",
-            "updatedAt": "2020-03-18T13:29:32.397Z",
-            "createdAt": "2020-03-18T13:29:32.397Z",
-            "objectType": "service-catalog-order",
-            "objectReference": "5e72223ae3c240015092efbb",
-            "milestone": "Pre-change Validation",
-            "__v": 0,
-            "execution": {
-                "type": "template-execution",
-                "executionData": "[{\"deviceName\":\"USPALTWRR01DRE0001-PV01\",\"executionId\":\"5e7229f60d2df741cc8e510d\",\"overallTmplResult\":false}]",
-                "templateId": "DC-MSC-Port-Turn-Down-Pre-Check-Validation"
-            },
-            "status": "Complete"
-        }
-
-    ];
-    res.send(responseObj);
 });
 
 //get Devices List for Device Manger Page
 router.post('/device-manager', async (req, res) => {
 
-    var DeviceData = await deviceManager.getDevices(req.body.vmIPAddress,req.body.nsoInstance, req.body.accessToken);
+    var DeviceData = await deviceManager.getDevices(req.body.vmIPAddress, req.body.nsoInstance, req.body.accessToken);
     res.send(DeviceData);
-  
-  });
+
+});
 
 // Ping Device from Device Manager
 router.post('/ping-device', async (req, res) => {
 
-  var PingData = await deviceManager.pingDevice(req.body.pingDeviceInfo.name,req.body.vmIPAddress,req.body.nsoInstance, req.body.accessToken, req.body.pingDeviceInfo );
-  res.send(PingData);
+    var PingData = await deviceManager.pingDevice(req.body.pingDeviceInfo.name, req.body.vmIPAddress, req.body.nsoInstance, req.body.accessToken, req.body.pingDeviceInfo);
+    res.send(PingData);
 
 });
 
@@ -11678,21 +11610,21 @@ router.post('/category-service', (req, res) => {
                                 ErrorFlag1 = false;
                             }
                         });
-                        
+
                     });
-                        if (ErrorFlag1) {
-                            responseObj.status = 'Error';
-                            responseObj.msg = 'Error Occurred while Inserting Service Category into MongoDB';
-                            responseObj.body = null;
-                        } else {
-                            responseObj.status = 'Success';
-                            responseObj.msg = 'Successfully fetched Service Categories';
-                            responseObj.body = categoryList.data;
-                        }
+                    if (ErrorFlag1) {
+                        responseObj.status = 'Error';
+                        responseObj.msg = 'Error Occurred while Inserting Service Category into MongoDB';
+                        responseObj.body = null;
+                    } else {
+                        responseObj.status = 'Success';
+                        responseObj.msg = 'Successfully fetched Service Categories';
+                        responseObj.body = categoryList.data;
                     }
-                    res.send(responseObj); 
+                }
+                res.send(responseObj);
             });
-            
+
         }
     });
 });
@@ -11736,14 +11668,14 @@ router.post('/service-item', (req, res) => {
                     itemsList.data.forEach(item => {
                         //console.log('name res',item);
                         var serviceItemsObj = new ServiceItemsModel({
-                            _id:item._id,
-                            name:item.name,
-                            description:item.description,
-                            tags:[{name:item.tags.length > 0 ? item.tags[0]['name'] : '-'}],
-                            categoryIds:[{description:item.categoryIds[0]['description'],_id:item.categoryIds[0]['_id'],name:item.categoryIds[0]['name']}]  , 
-                            flag:false
+                            _id: item._id,
+                            name: item.name,
+                            description: item.description,
+                            tags: [{ name: item.tags.length > 0 ? item.tags[0]['name'] : '-' }],
+                            categoryIds: [{ description: item.categoryIds[0]['description'], _id: item.categoryIds[0]['_id'], name: item.categoryIds[0]['name'] }],
+                            flag: false
                         });
-                        serviceItemsObj.save(function(err) {
+                        serviceItemsObj.save(function (err) {
                             if (err) {
                                 ErrorFlag2 = true;
                             }
@@ -11751,27 +11683,43 @@ router.post('/service-item', (req, res) => {
                                 ErrorFlag2 = false;
                             }
                         });
-                        
+
                     });
-                        if (ErrorFlag2) {
-                            responseObj.status = 'Error';
-                            responseObj.msg = 'Error Occurred while Inserting Service items into MongoDB';
-                            responseObj.body = null;
-                        } else {
-                            responseObj.status = 'Success';
-                            responseObj.msg = 'Successfully fetched Service Items';
-                            responseObj.body = itemsList.data;
-                        }
+                    if (ErrorFlag2) {
+                        responseObj.status = 'Error';
+                        responseObj.msg = 'Error Occurred while Inserting Service items into MongoDB';
+                        responseObj.body = null;
+                    } else {
+                        responseObj.status = 'Success';
+                        responseObj.msg = 'Successfully fetched Service Items';
+                        responseObj.body = itemsList.data;
                     }
-                    res.send(responseObj); 
+                }
+                res.send(responseObj);
             });
-            
+
         }
     });
 });
 
 
-app.use('',appConfig);
+// Return the Broadcast message
+router.get('/broadcast-message', (req, res) => {
+
+    console.log('GET /broadcast-message: ', req.body);
+
+    res.send({ broadcastMessage });
+});
+
+// Update the Broadcast Message
+router.put('/broadcast-message', (req, res) => {
+
+    console.log('PUT /broadcast-message: ', req.body);
+
+    broadcastMessage = req.body.broadcastMessage;
+    res.send({ broadcastMessage });
+
+});
 
 app.listen(8080, () => {
 
