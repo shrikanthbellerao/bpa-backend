@@ -7,7 +7,8 @@ const compression = require('compression');
 const request = require('request').defaults({ rejectUnauthorized: false });
 const redis = require("redis");
 const deviceManager = require('./controller/device-manager').DeviceManagerData;
-
+const appConfig = require('./controller/app-config')
+const myProfile = require('./controller/my-profile')
 const ServiceCategorySchema = require('./model/category-service.model').ServiceCategorySchema;
 const ServiceItemsSchema = require('./model/service-item.model').ServiceItemsSchema;
 
@@ -78,7 +79,6 @@ var responseObj = {
     body: null
 };
 
-var broadcastMessage = 'Site is under construction. Please check later!'
 
 // Test Router
 router.get('/', (req, res) => {
@@ -11821,23 +11821,8 @@ router.post('/milestone', (req, res) => {
     )
 })
 
-// Return the Broadcast message
-router.get('/broadcast-message', (req, res) => {
-
-    console.log('GET /broadcast-message: ', req.body);
-
-    res.send({ broadcastMessage });
-});
-
-// Update the Broadcast Message
-router.put('/broadcast-message', (req, res) => {
-
-    console.log('PUT /broadcast-message: ', req.body);
-
-    broadcastMessage = req.body.broadcastMessage;
-    res.send({ broadcastMessage });
-
-});
+app.use('',appConfig);
+app.use('',myProfile);
 
 app.listen(8080, () => {
 
