@@ -7,10 +7,11 @@ const compression = require('compression');
 const request = require('request').defaults({ rejectUnauthorized: false });
 const redis = require("redis");
 const deviceManager = require('./controller/device-manager').DeviceManagerData;
+const appConfig = require('./controller/app-config')
+const myProfile = require('./controller/my-profile')
 const serviceItems = require('./controller/service-item').ServiceItemData;
-
 const ServiceCategorySchema = require('./model/category-service.model').ServiceCategorySchema;
-const OrderSchema = require('./model/order.model');
+const OrderSchema = require('./model/order.model').OrderSchema;
 const ServiceItemsSchema = require('./model/service-item.model').ServiceItemsSchema;
 const Schema = mongoose.Schema;
 const serviceOrder = require('./controller/service-order').ServiceOrderData;
@@ -110,7 +111,7 @@ router.post('/login', (req, res) => {
         console.log('\nResponse Error: ', error);
         console.log('\nResponse Body: ', body);
 
-        if (error) {
+        if (body.error === 403) {
             responseObj.status = 'error';
             responseObj.msg = `Error Occurred while validating User's credentials. Error Message: ${error}`;
         } else {
@@ -122,6 +123,9 @@ router.post('/login', (req, res) => {
         res.send(responseObj);
     });
 });
+
+
+
 
 // Fetch Service Orders from Service Catalog microservice of BPA
 router.post('/service-orders', (req, res) => {
@@ -11529,7 +11533,6 @@ router.post('/delete-favourite', (req, res) => {
             console.log('res2', data);
         res.json({ status: 'service item successfully deleted from favourite list' })
     })
-
 });
 
 //get Devices List for Device Manger Page
@@ -11543,43 +11546,19 @@ router.post('/device-manager', async (req, res) => {
 //get formdata from Order page
 router.post('/orders',(req,res)=>{
         console.log(req.body);
-        
+        const myModel = connObj.model('myOrders', OrderSchema);
         var OrderData= req.body;
-        const OrderSchema = connObj.model('order',OrderSchema);
-
-                // OrderData.formData.forEach((form) => {
-            var orderdetails=new OrderSchema({
-                formDetails:OrderData.formData
-                // action:form.action,
-                // vlan_type:form.vlan,
-                // vlan_id:form.vlanid,
-                // vlan_name:form.vlannm,
-                // vlan_description:form.vlandes,
-                // mtu:form.mtu,
-                // ip_address:form.ipadd,
-                // peer_ip_address:form.pipadd,
-                // hsrp_number:form.hsrpnum,
-                // hsrp_ip:form.hsrpstandip,
-                // hostname:form.hostnm,
-                // peer__hostname:form.peers,
-                // dhcp_server:form.dhcpserver,
-                // interface:form.interfnums
-        
-            });
-    
-            orderdetails.save(function(err, order){
+                           var orderdetails = new myModel({
+                        formDetails: OrderData.formData,
+                        
+                        });
+                
+                orderdetails.save(function(err, order){
                 console.log('ganesh',err,order);
                 res.json({orderNumber : order._id});
-            //     if(err)
-            //     // res.send('show_message',{message : "Database error", type:"error"});
-            //     else
-            //     res.send('show_message',{ message:"success",type:"success",orders:order});
-            });
-        // })
            
-    
-        
-        
+            });
+       
 });
 
 // Ping Device from Device Manager
@@ -11751,23 +11730,8 @@ router.post('/service-item', async(req, res) => {
     // });
 
 
-// Return the Broadcast message
-router.get('/broadcast-message', (req, res) => {
-
-    console.log('GET /broadcast-message: ', req.body);
-
-    res.send({ broadcastMessage });
-});
-
-// Update the Broadcast Message
-router.put('/broadcast-message', (req, res) => {
-
-    console.log('PUT /broadcast-message: ', req.body);
-
-    broadcastMessage = req.body.broadcastMessage;
-    res.send({ broadcastMessage });
-
-});
+app.use('',appConfig);
+app.use('',myProfile);
 
 app.listen(8080, () => {
 
