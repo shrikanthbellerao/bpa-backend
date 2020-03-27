@@ -70,7 +70,7 @@ methods.getOrders = (vmIPAddress, accessToken) => {
                 getRequestOptions.headers.Authorization = `Bearer ${accessToken}`;
                 request(getRequestOptions, function (error, response, rowData) {
                     console.log('\nResponse Error: ', error);
-                    console.log('\nResponse Body: ', serviceOrder);
+                    // console.log('\nResponse Body: ', serviceOrder);
                     if (error) {
                         responseObj.status = 'Error';
                         responseObj.msg = `Error Occurred while fetching service orders. Error Message: ${error}`;
