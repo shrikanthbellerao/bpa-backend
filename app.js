@@ -7,6 +7,8 @@ const compression = require('compression');
 const request = require('request').defaults({ rejectUnauthorized: false });
 const redis = require("redis");
 const deviceManager = require('./controller/device-manager').DeviceManagerData;
+const appConfig = require('./controller/app-config')
+const myProfile = require('./controller/my-profile')
 const serviceItems = require('./controller/service-item').ServiceItemData;
 
 const ServiceCategorySchema = require('./model/category-service.model').ServiceCategorySchema;
@@ -85,7 +87,6 @@ var responseObj = {
     body: null
 };
 
-var broadcastMessage = 'Site is under construction. Please check later!'
 
 // Test Router
 router.get('/', (req, res) => {
@@ -107,7 +108,7 @@ router.post('/login', (req, res) => {
         console.log('\nResponse Error: ', error);
         console.log('\nResponse Body: ', body);
 
-        if (error) {
+        if (body.errCode === 403) {
             responseObj.status = 'error';
             responseObj.msg = `Error Occurred while validating User's credentials. Error Message: ${error}`;
         } else {
@@ -119,6 +120,9 @@ router.post('/login', (req, res) => {
         res.send(responseObj);
     });
 });
+
+
+
 
 // Fetch Service Orders from Service Catalog microservice of BPA
 router.post('/service-orders', (req, res) => {
@@ -11706,23 +11710,8 @@ router.post('/service-item', async(req, res) => {
     // });
 
 
-// Return the Broadcast message
-router.get('/broadcast-message', (req, res) => {
-
-    console.log('GET /broadcast-message: ', req.body);
-
-    res.send({ broadcastMessage });
-});
-
-// Update the Broadcast Message
-router.put('/broadcast-message', (req, res) => {
-
-    console.log('PUT /broadcast-message: ', req.body);
-
-    broadcastMessage = req.body.broadcastMessage;
-    res.send({ broadcastMessage });
-
-});
+app.use('',appConfig);
+app.use('',myProfile);
 
 app.listen(8080, () => {
 
