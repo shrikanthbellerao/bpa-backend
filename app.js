@@ -12,11 +12,13 @@ const serviceOrder = require('./controller/service-order').ServiceOrderData;
 
 const ServiceCategorySchema = require('./model/category-service.model').ServiceCategorySchema;
 const ServiceItemsSchema = require('./model/service-item.model').ServiceItemsSchema;
+const activeService = require('./controller/active-services').ActiveServiceData;
 
 // const RedisClient = redis.createClient();
 // RedisClient.on('connect', function() {
 //   console.log('Connected to Redis');
 // });
+
 const dbUser = 'bpa';
 const dbPass = 'bpa';
 const dbServer = 'bpa-mzccx.mongodb.net';
@@ -99,7 +101,7 @@ router.post('/login', (req, res) => {
 
     request(postRequestOptions, function (error, response, body) {
 
-         console.log('\nResponse Error: ', error);
+        console.log('\nResponse Error: ', error);
         console.log('\nResponse Body: ', body);
 
         if (error) {
@@ -115,7 +117,47 @@ router.post('/login', (req, res) => {
     });
 });
 
-// Fetch Service Orders from Service Catalog microservice of BPA
+//Select favourite items from Service Catalog microservice of BPA
+router.post('/select-favourite', (req, res) => {
+
+    console.log('POST /select-favourite: ', req.body);
+    const ServiceItemsModel = connObj.model('service-item', ServiceItemsSchema);
+    ServiceItemsModel.update({ '_id': req.body.id }, { $set: { 'flag': true } }, (err, data) => {
+        console.log('res1', err),
+            console.log('res2', data);
+        res.json({ status: 'service item successfully selected as favourite' })
+    })
+
+});
+router.post('/delete-favourite', (req, res) => {
+
+    console.log('POST /delete-favourite: ', req.body);
+    const ServiceItemsModel = connObj.model('service-item', ServiceItemsSchema);
+    ServiceItemsModel.update({ '_id': req.body.id }, { $set: { 'flag': false } }, (err, data) => {
+        console.log('res1', err),
+            console.log('res2', data);
+        res.json({ status: 'service item successfully deleted from favourite list' })
+    })
+
+});
+
+//get Devices List for Device Manger Page
+router.post('/device-manager', async (req, res) => {
+
+    var DeviceData = await deviceManager.getDevices(req.body.vmIPAddress, req.body.nsoInstance, req.body.accessToken);
+    res.send(DeviceData);
+
+});
+
+// Ping Device from Device Manager
+router.post('/ping-device', async (req, res) => {
+
+    var PingData = await deviceManager.pingDevice(req.body.pingDeviceInfo.name, req.body.vmIPAddress, req.body.nsoInstance, req.body.accessToken, req.body.pingDeviceInfo);
+    res.send(PingData);
+
+});
+
+//get Orders List for Active Services Page
 router.post('/service-order', async (req, res) => {
 
     var OrderData = await serviceOrder.getOrders(req.body.vmIPAddress, req.body.accessToken);
@@ -123,19 +165,11 @@ router.post('/service-order', async (req, res) => {
 
 });
 
-//get Devices List for Device Manger Page
-router.post('/device-manager', async (req, res) => {
+//get Milestones for Active Services Page
+router.post('/milestone', async (req, res) => {
 
-    var DeviceData = await deviceManager.getDevices(req.body.vmIPAddress,req.body.nsoInstance, req.body.accessToken);
-    res.send(DeviceData);
-  
-  });
-
-// Ping Device from Device Manager
-router.post('/ping-device', async (req, res) => {
-
-  var PingData = await deviceManager.pingDevice(req.body.pingDeviceInfo.name,req.body.vmIPAddress,req.body.nsoInstance, req.body.accessToken, req.body.pingDeviceInfo );
-  res.send(PingData);
+    var MilestoneData = await activeService.getMilestones(req);
+    res.send(MilestoneData);
 
 });
 
@@ -189,21 +223,21 @@ router.post('/category-service', (req, res) => {
                                 ErrorFlag1 = false;
                             }
                         });
-                        
+
                     });
-                        if (ErrorFlag1) {
-                            responseObj.status = 'Error';
-                            responseObj.msg = 'Error Occurred while Inserting Service Category into MongoDB';
-                            responseObj.body = null;
-                        } else {
-                            responseObj.status = 'Success';
-                            responseObj.msg = 'Successfully fetched Service Categories';
-                            responseObj.body = categoryList.data;
-                        }
+                    if (ErrorFlag1) {
+                        responseObj.status = 'Error';
+                        responseObj.msg = 'Error Occurred while Inserting Service Category into MongoDB';
+                        responseObj.body = null;
+                    } else {
+                        responseObj.status = 'Success';
+                        responseObj.msg = 'Successfully fetched Service Categories';
+                        responseObj.body = categoryList.data;
                     }
-                    res.send(responseObj); 
+                }
+                res.send(responseObj);
             });
-            
+
         }
     });
 });
@@ -307,77 +341,6 @@ router.post('/service-item', async(req, res) => {
     //     }
     // });
 
-// Fetch Milestone of Active Services from Service Catalog microservice of BPA
-router.post('/milestone', (req, res) => {
-
-
-    responseObj.status = 'success';
-    responseObj.msg = 'Successfully fetched Milestones';
-    responseObj.body = {
-        "status": "Success",
-        "message": "Milestones List",
-        "totalRecords": 10,
-        "data": [
-            {
-                "_id": "5e72223b34ac5c0166164910",
-                "updatedAt": "2020-03-18T13:29:31.773Z",
-                "createdAt": "2020-03-18T13:29:31.773Z",
-                "objectType": "service-catalog-order",
-                "objectReference": "5e72223ae3c240015092efbb",
-                "milestone": "Check-Sync I",
-                "__v": 0,
-                "status": "Complete"
-            },
-            {
-                "_id": "5e72223c34ac5c0166164911",
-                "updatedAt": "2020-03-18T13:29:32.152Z",
-                "createdAt": "2020-03-18T13:29:32.152Z",
-                "objectType": "service-catalog-order",
-                "objectReference": "5e72223ae3c240015092efbb",
-                "milestone": "Dryrun Review I",
-                "__v": 0,
-                "execution": {
-                    "type": "dryrun",
-                    "executionData": "5e722349104a5741c775e16a",
-                    "templateId": "Dry-Run"
-                },
-                "status": "Complete"
-            },
-            {
-                "_id": "5e72223c34ac5c0166164912",
-                "updatedAt": "2020-03-18T13:29:32.287Z",
-                "createdAt": "2020-03-18T13:29:32.287Z",
-                "objectType": "service-catalog-order",
-                "objectReference": "5e72223ae3c240015092efbb",
-                "milestone": "Peer review",
-                "__v": 0,
-                "execution": {
-                    "type": "peer-review",
-                    "executionData": "5e72223ae3c240015092efbb",
-                    "templateId": "Peer Review"
-                },
-                "status": "Complete"
-            },
-            {
-                "_id": "5e72223c34ac5c0166164913",
-                "updatedAt": "2020-03-18T13:29:32.397Z",
-                "createdAt": "2020-03-18T13:29:32.397Z",
-                "objectType": "service-catalog-order",
-                "objectReference": "5e72223ae3c240015092efbb",
-                "milestone": "Pre-change Validation",
-                "__v": 0,
-                "execution": {
-                    "type": "template-execution",
-                    "executionData": "[{\"deviceName\":\"USPALTWRR01DRE0001-PV01\",\"executionId\":\"5e7229f60d2df741cc8e510d\",\"overallTmplResult\":false}]",
-                    "templateId": "DC-MSC-Port-Turn-Down-Pre-Check-Validation"
-                },
-                "status": "Complete"
-            }]
-    }
-    res.send(
-        responseObj
-    )
-})
 
 // Return the Broadcast message
 router.get('/broadcast-message', (req, res) => {
