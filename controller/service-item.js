@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const redis = require('redis');
 const request = require('request').defaults({ rejectUnauthorized: false });
 const ServiceItemsSchema = require('../model/service-item.model').ServiceItemsSchema;
 
