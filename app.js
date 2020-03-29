@@ -162,7 +162,7 @@ router.post('/service-order', async (req, res) => {
 
     var OrderData = await serviceOrder.getOrders(req.body.vmIPAddress, req.body.accessToken);
     res.send(OrderData);
-
+    console.log('aaaa')
 });
 
 //get Milestones for Active Services Page
