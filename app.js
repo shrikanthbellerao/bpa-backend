@@ -89,7 +89,7 @@ var responseObj = {
 };
 
 
-var broadcastMessage = 'Site is under construction. Please check later!'
+
 
 // Test Router
 router.get('/', (req, res) => {
