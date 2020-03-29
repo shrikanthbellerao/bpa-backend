@@ -111,7 +111,7 @@ router.post('/login', (req, res) => {
         console.log('\nResponse Error: ', error);
         console.log('\nResponse Body: ', body);
 
-        if (body.error === 403) {
+        if (error) {
             responseObj.status = 'error';
             responseObj.msg = `Error Occurred while validating User's credentials. Error Message: ${error}`;
         } else {
