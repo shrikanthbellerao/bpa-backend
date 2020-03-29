@@ -1,19 +1,6 @@
 const mongoose = require('mongoose');
-const redis = require('redis');
 const request = require('request').defaults({ rejectUnauthorized: false });
 const ServiceItemsSchema = require('../model/service-item.model').ServiceItemsSchema;
-
-
-// var postRequestOptions = {
-//     url: '',
-//     method: 'POST',
-//     json: true,
-//     headers: {
-//         Accept: 'application/json',
-//         'Content-Type': 'application/json'
-//     },
-//     body: {},
-// };
 
 var getRequestOptions = {
     url: '',
@@ -47,7 +34,7 @@ var connObj = mongoose.createConnection(
 );
 var methods = {};
 
-methods.getServiceItems = (vmIPAddress, nsoInstance, accessToken) => {
+methods.getServiceItems = (vmIPAddress, accessToken) => {
 
     return new Promise((resolve,reject) => {
         const ServiceItemsModel = connObj.model('service-item',ServiceItemsSchema);
@@ -73,7 +60,7 @@ methods.getServiceItems = (vmIPAddress, nsoInstance, accessToken) => {
                 request(getRequestOptions, function (error, response, itemsList) {
     
                     // console.log('\nResponse Error: ', error);
-                    // console.log('\nResponse Body: ', itemsList);
+                     console.log('\nResponse Body: ', itemsList);
     
                     if (error) {
                         responseObj.status = 'Error';

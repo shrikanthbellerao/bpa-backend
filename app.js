@@ -8,9 +8,7 @@ const request = require('request').defaults({ rejectUnauthorized: false });
 const redis = require("redis");
 const deviceManager = require('./controller/device-manager').DeviceManagerData;
 const serviceItems = require('./controller/service-item').ServiceItemData;
-
-const ServiceCategorySchema = require('./model/category-service.model').ServiceCategorySchema;
-const ServiceItemsSchema = require('./model/service-item.model').ServiceItemsSchema;
+const serviceCatalog = require('./controller/service-catalog').ServiceCatalogData;
 
 // const RedisClient = redis.createClient();
 // RedisClient.on('connect', function() {
@@ -54,25 +52,6 @@ var postRequestOptions = {
     body: {},
 };
 
-var getRequestOptions = {
-    url: '',
-    method: 'GET',
-    json: true,
-    headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json'
-    }
-};
-
-var deleteRequestOptions = {
-    url: '',
-    method: 'DELETE',
-    json: true,
-    headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json'
-    }
-};
 var responseObj = {
     status: '',
     msg: '',
@@ -11501,27 +11480,16 @@ router.post('/service-orders', (req, res) => {
 
 //Select favourite items from Service Catalog microservice of BPA
 router.post('/select-favourite', (req, res) => {
+    serviceCatalog.selectFavitems(req);
+    res.json({status:'service item successfully selected as favourite'})
+});   
 
-    console.log('POST /select-favourite: ', req.body);
-    const ServiceItemsModel = connObj.model('service-item', ServiceItemsSchema);
-    ServiceItemsModel.update({'_id':req.body.id},{$set:{'flag':true}},(err,data)=>{
-        console.log('res1',err),
-        console.log('res2',data);
-        res.json({status:'service item successfully selected as favourite'})
-    })
-    
-});
+//Delete favourite items from Service Catalog microservice of BPA
 router.post('/delete-favourite', (req, res) => {
+    serviceCatalog.deleteFavitems(req);
+    res.json({status:'service item successfully deleted from favourite list'})
 
-    console.log('POST /delete-favourite: ', req.body);
-    const ServiceItemsModel = connObj.model('service-item', ServiceItemsSchema);
-    ServiceItemsModel.update({'_id':req.body.id},{$set:{'flag':false}},(err,data)=>{
-        console.log('res1',err),
-        console.log('res2',data);
-        res.json({status:'service item successfully deleted from favourite list'})
-    })
-    
-});
+}); 
 
 // Fetch Milestone of Active Services from Service Catalog microservice of BPA
 router.post('/milestone', (req, res) => {
@@ -11606,148 +11574,18 @@ router.post('/ping-device', async (req, res) => {
 });
 
 //Fetch service category from service catalog
-router.post('/category-service', (req, res) => {
+router.post('/category-service', async (req, res) => {
 
-    console.log('POST /category-service: ', req.body);
-    const ServiceCategoryModel = connObj.model('category-service', ServiceCategorySchema);
+    var CategoryData = await serviceCatalog.getServiceCategory(req);
+    res.send(CategoryData);
 
-    ServiceCategoryModel.find({}, {}, {}, (err, docs) => {
-        var ErrorFlag1;
-        console.log('Err: ', err);
-        // console.log('Docs: ', docs);
-
-        if (!err && docs && (docs.length > 0)) {
-
-            console.log('\nData is present in MongoDB');
-
-            responseObj.status = 'Success';
-            responseObj.msg = 'Successfully fetched Service Categories';
-            responseObj.body = docs;
-            res.send(responseObj);
-        } else {
-            console.log('\nData is not present in MongoDB');
-
-            getRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/service-catalog/service-categories?_page=1&_limit=200000`;
-            getRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
-
-            request(getRequestOptions, function (error, response, categoryList) {
-
-                console.log('\nResponse Error: ', error);
-                console.log('\nResponse Body: ', categoryList);
-
-                if (error) {
-                    responseObj.status = 'Error';
-                    responseObj.msg = `Error Occurred while fetching service categories. Error Message: ${error}`;
-                    responseObj.body = null;
-                    res.send(responseObj);
-                } else {
-                    categoryList.data.forEach(category => {
-                        var serviceCategoryObj = new ServiceCategoryModel({
-                            _id: category._id,
-                            name: category.name,
-                            description: category.description
-                        });
-                        serviceCategoryObj.save(function (err) {
-                            if (err) {
-                                ErrorFlag1 = true;
-                            }
-                            else {
-                                ErrorFlag1 = false;
-                            }
-                        });
-                        
-                    });
-                        if (ErrorFlag1) {
-                            responseObj.status = 'Error';
-                            responseObj.msg = 'Error Occurred while Inserting Service Category into MongoDB';
-                            responseObj.body = null;
-                        } else {
-                            responseObj.status = 'Success';
-                            responseObj.msg = 'Successfully fetched Service Categories';
-                            responseObj.body = categoryList.data;
-                        }
-                    }
-                    res.send(responseObj); 
-            });
-            
-        }
-    });
 });
-
 //Fetch service items from service catalog
 router.post('/service-item', async(req, res) => {
 
-    var itemData = await serviceItems.getServiceItems(req.body.vmIPAddress,req.body.nsoInstance,req.body.accessToken);
+    var itemData = await serviceItems.getServiceItems(req.body.vmIPAddress,req.body.accessToken);
     res.send(itemData);
 });
-    // console.log('POST /service-item: ', req.body);
-    // const ServiceItemsModel = connObj.model('service-item', ServiceItemsSchema);
-
-    // ServiceItemsModel.find({}, {}, {}, (err, docs) => {
-    //     var ErrorFlag2;
-    //     console.log('Err: ', err);
-    //     // console.log('Docs: ', docs);
-
-    //     if (!err && docs && (docs.length > 0)) {
-
-    //         console.log('\nData is present in MongoDB');
-
-    //         responseObj.status = 'Success';
-    //         responseObj.msg = 'Successfully fetched Service Items';
-    //         responseObj.body = docs;
-    //         res.send(responseObj);
-    //     } else {
-    //         console.log('\nData is not present in MongoDB');
-
-    //         getRequestOptions.url = `https://${req.body.vmIPAddress}/bpa/api/v1.0/service-catalog/service-items?_page=1&_limit=20&status=Active&order=asc`;
-    //         getRequestOptions.headers.Authorization = `Bearer ${req.body.accessToken}`;
-
-    //         request(getRequestOptions, function (error, response, itemsList) {
-
-    //             console.log('\nResponse Error: ', error);
-    //             console.log('\nResponse Body: ', itemsList);
-
-    //             if (error) {
-    //                 responseObj.status = 'Error';
-    //                 responseObj.msg = `Error Occurred while fetching service items. Error Message: ${error}`;
-    //                 responseObj.body = null;
-    //                 res.send(responseObj);
-    //             } else {
-    //                 itemsList.data.forEach(item => {
-    //                     //console.log('name res',item);
-    //                     var serviceItemsObj = new ServiceItemsModel({
-    //                         _id:item._id,
-    //                         name:item.name,
-    //                         description:item.description,
-    //                         tags:[{name:item.tags.length > 0 ? item.tags[0]['name'] : '-'}],
-    //                         categoryIds:[{description:item.categoryIds[0]['description'],_id:item.categoryIds[0]['_id'],name:item.categoryIds[0]['name']}]  , 
-    //                         flag:false
-    //                     });
-    //                     serviceItemsObj.save(function(err) {
-    //                         if (err) {
-    //                             ErrorFlag2 = true;
-    //                         }
-    //                         else {
-    //                             ErrorFlag2 = false;
-    //                         }
-    //                     });
-                        
-    //                 });
-    //                     if (ErrorFlag2) {
-    //                         responseObj.status = 'Error';
-    //                         responseObj.msg = 'Error Occurred while Inserting Service items into MongoDB';
-    //                         responseObj.body = null;
-    //                     } else {
-    //                         responseObj.status = 'Success';
-    //                         responseObj.msg = 'Successfully fetched Service Items';
-    //                         responseObj.body = itemsList.data;
-    //                     }
-    //                 }
-    //                 res.send(responseObj); 
-    //         });
-            
-    //     }
-    // });
 
 // Fetch Milestone of Active Services from Service Catalog microservice of BPA
 router.post('/milestone', (req, res) => {
