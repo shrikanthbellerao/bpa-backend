@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 const ObjectId = Schema.ObjectId;
 
 const ServiceOrderSchema = new Schema({
-    orderNumber: String,
+    orderNumber: Number,
     _id: String,
     processInstanceId: String,
     description: String,

@@ -70,7 +70,7 @@ methods.getOrders = (vmIPAddress, accessToken) => {
                 getRequestOptions.headers.Authorization = `Bearer ${accessToken}`;
                 request(getRequestOptions, function (error, response, rowData) {
                     console.log('\nResponse Error: ', error);
-                    console.log('\nResponse Body: ', serviceOrder);
+                    // console.log('\nResponse Body: ', serviceOrder);
                     if (error) {
                         responseObj.status = 'Error';
                         responseObj.msg = `Error Occurred while fetching service orders. Error Message: ${error}`;
@@ -104,30 +104,30 @@ methods.getOrders = (vmIPAddress, accessToken) => {
 
 var DbOrderLoop = (rowData, ServiceOrderModel) => {
     return new Promise(async (resolve, reject) => {
-        var orderLength = rowData.length
+        var orderLength = rowData.data.length
         var errorflag;
         for (i = 0; i < orderLength; i++) {
             // serviceOrder.data.forEach(order => {
-            //     console.log('order res',serviceOrder);
+                console.log('order res', i);
             var serviceOrderObj = new ServiceOrderModel({
-                orderNumber: rowData[i].orderNumber,
-                _id: rowData[i]._id,
-                processInstanceId: rowData[i].processInstanceId,
-                description: rowData[i].description,
-                action: rowData[i].action,
-                item: rowData[i].item,
+                orderNumber: rowData.data[i].orderNumber,
+                _id: rowData.data[i]._id,
+                processInstanceId: rowData.data[i].processInstanceId,
+                description: rowData.data[i].description,
+                action: rowData.data[i].action,
+                item: rowData.data[i].item,
                 formData:
                 {
-                    connectionRow: rowData[i].formData.connectionRow,
-                    crq: rowData[i].formData.crq,
-                    nser: rowData[i].nser,
-                    pid: rowData[i].pid
+                    connectionRow: rowData.data[i].formData.connectionRow,
+                    crq: rowData.data[i].formData.crq,
+                    nser: rowData.data[i].nser,
+                    pid: rowData.data[i].pid
                 },
-                createdAt: rowData[i].createdAt,
-                updatedAt: rowData[i].updatedAt,
-                userName: rowData[i].userName,
-                status: rowData[i].status,
-                useractions: rowData[i].useractions
+                createdAt: rowData.data[i].createdAt,
+                updatedAt: rowData.data[i].updatedAt,
+                userName: rowData.data[i].userName,
+                status: rowData.data[i].status,
+                useractions: rowData.data[i].useractions
 
             });
 
