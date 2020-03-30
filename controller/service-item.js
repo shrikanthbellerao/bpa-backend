@@ -41,7 +41,7 @@ methods.getServiceItems = (vmIPAddress, accessToken) => {
         ServiceItemsModel.find({}, {}, {}, (err, docs) => {
             var ErrorFlag2;
             console.log('Err: ', err);
-            console.log('Docs: ', docs);
+            // console.log('Docs: ', docs);
     
             if (!err && docs && (docs.length > 0)) {
     
