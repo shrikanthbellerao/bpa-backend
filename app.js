@@ -10,9 +10,10 @@ const deviceManager = require('./controller/device-manager').DeviceManagerData;
 const appConfig = require('./controller/app-config')
 const myProfile = require('./controller/my-profile')
 const serviceItems = require('./controller/service-item').ServiceItemData;
-
 const ServiceCategorySchema = require('./model/category-service.model').ServiceCategorySchema;
+const OrderSchema = require('./model/order.model').OrderSchema;
 const ServiceItemsSchema = require('./model/service-item.model').ServiceItemsSchema;
+const Schema = mongoose.Schema;
 const serviceOrder = require('./controller/service-order').ServiceOrderData;
 const activeService = require('./controller/active-services').ActiveServiceData;
 const cors = require('cors');
@@ -88,6 +89,8 @@ var responseObj = {
 };
 
 
+
+
 // Test Router
 router.get('/', (req, res) => {
     res.send({
@@ -108,7 +111,7 @@ router.post('/login', (req, res) => {
         console.log('\nResponse Error: ', error);
         console.log('\nResponse Body: ', body);
 
-        if (body.errCode === 403) {
+        if (error) {
             responseObj.status = 'error';
             responseObj.msg = `Error Occurred while validating User's credentials. Error Message: ${error}`;
         } else {
@@ -11530,7 +11533,6 @@ router.post('/delete-favourite', (req, res) => {
             console.log('res2', data);
         res.json({ status: 'service item successfully deleted from favourite list' })
     })
-
 });
 
 //get Devices List for Device Manger Page
@@ -11539,6 +11541,24 @@ router.post('/device-manager', async (req, res) => {
     var DeviceData = await deviceManager.getDevices(req.body.vmIPAddress, req.body.nsoInstance, req.body.accessToken);
     res.send(DeviceData);
 
+});
+
+//get formdata from Order page
+router.post('/orders',(req,res)=>{
+        console.log(req.body);
+        const myModel = connObj.model('myOrders', OrderSchema);
+        var OrderData= req.body;
+                           var orderdetails = new myModel({
+                           formDetails: OrderData.formData,
+                        
+                        });
+                
+                orderdetails.save(function(err, order){
+                console.log('ganesh',err,order);
+                res.json({orderNumber : order._id});
+           
+            });
+       
 });
 
 // Ping Device from Device Manager
