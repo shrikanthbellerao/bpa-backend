@@ -16,6 +16,7 @@ const ServiceItemsSchema = require('./model/service-item.model').ServiceItemsSch
 const serviceOrder = require('./controller/service-order').ServiceOrderData;
 const activeService = require('./controller/active-services').ActiveServiceData;
 const cors = require('cors');
+const faq= require('./controller/FAQ');
 
 // const RedisClient = redis.createClient();
 // RedisClient.on('connect', function() {
@@ -11712,6 +11713,7 @@ router.post('/service-item', async(req, res) => {
 
 app.use('',appConfig);
 app.use('',myProfile);
+app.use('',faq); 
 
 app.listen(8080, () => {
 
