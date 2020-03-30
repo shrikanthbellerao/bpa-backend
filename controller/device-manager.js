@@ -92,7 +92,7 @@ methods.pingDevice = (deviceName, vmIPAddress, nsoInstance, accessToken, pingDev
                         postRequestOptions.headers.Authorization = `Bearer ${accessToken}`;
                         postRequestOptions.body = [pingDeviceInfo];
 
-                        request(postRequestOptions, function (error, response, body) {
+                        request(postRequestOptions, (error, response, body) => {
                             console.log('Device Manager : Ping Device API Error - ', error);
                             if (error) {
                                 responseObj.status = 'Error';
@@ -155,7 +155,7 @@ methods.getDevices = (vmIPAddress, nsoInstance, accessToken) => {
                 getRequestOptions.headers.Authorization = `Bearer ${accessToken}`;
 
 
-                request(getRequestOptions, function (error, response, devicelist) {
+                request(getRequestOptions, async (error, response, devicelist) => {
 
                     console.log('Device Manager : Device List API Error - ', error);
 
@@ -166,8 +166,7 @@ methods.getDevices = (vmIPAddress, nsoInstance, accessToken) => {
                         resolve(responseObj);
                     } else {
 
-
-                        DbDeviceLoop(devicelist, DeviceModel).then((ErrorFlag) => {
+                        var ErrorFlag = await DbDeviceLoop(devicelist, DeviceModel);
                             if (ErrorFlag) {
                                 responseObj.status = 'Error';
                                 responseObj.msg = 'Error Occurred while Inserting Device List into MongoDB';
@@ -181,7 +180,6 @@ methods.getDevices = (vmIPAddress, nsoInstance, accessToken) => {
                                 console.log('Device Manager : Serving Device List from API and stored in MongoDB');
                                 resolve(responseObj);
                             }
-                        })
                     }
 
                 });
