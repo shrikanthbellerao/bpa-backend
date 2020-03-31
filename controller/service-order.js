@@ -70,7 +70,7 @@ methods.getOrders = (vmIPAddress, accessToken) => {
                 getRequestOptions.headers.Authorization = `Bearer ${accessToken}`;
                 request(getRequestOptions, function (error, response, rowData) {
                     console.log('\nResponse Error: ', error);
-                    console.log('\nResponse Body: ', serviceOrder);
+                    // console.log('\nResponse Body: ', serviceOrder);
                     if (error) {
                         responseObj.status = 'Error';
                         responseObj.msg = `Error Occurred while fetching service orders. Error Message: ${error}`;
@@ -108,13 +108,13 @@ var DbOrderLoop = (rowData, ServiceOrderModel) => {
         var errorflag;
         for (i = 0; i < orderLength; i++) {
             // serviceOrder.data.forEach(order => {
-            //     console.log('order res',serviceOrder);
+                console.log('order res', i);
             var serviceOrderObj = new ServiceOrderModel({
                 orderNumber: rowData.data[i].orderNumber,
                 _id: rowData.data[i]._id,
                 processInstanceId: rowData.data[i].processInstanceId,
                 description: rowData.data[i].description,
-                action: rowDatadata.data[i].action,
+                action: rowData.data[i].action,
                 item: rowData.data[i].item,
                 formData:
                 {
