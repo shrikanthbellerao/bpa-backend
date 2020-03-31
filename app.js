@@ -11,6 +11,8 @@ const appConfig = require('./controller/app-config')
 const myProfile = require('./controller/my-profile')
 const serviceItems = require('./controller/service-item').ServiceItemData;
 const serviceCatalog = require('./controller/service-catalog').ServiceCatalogData;
+const OrderSchema = require('./model/order.model').OrderSchema;
+const Schema = mongoose.Schema;
 const serviceOrder = require('./controller/service-order').ServiceOrderData;
 const activeService = require('./controller/active-services').ActiveServiceData;
 const cors = require('cors');
@@ -81,7 +83,7 @@ router.post('/login', (req, res) => {
         console.log('\nResponse Error: ', error);
         console.log('\nResponse Body: ', body);
 
-        if (body.errCode === 403) {
+        if (error) {
             responseObj.status = 'error';
             responseObj.msg = `Error Occurred while validating User's credentials. Error Message: ${error}`;
         } else {
@@ -114,6 +116,24 @@ router.post('/device-manager', async (req, res) => {
 
 });
 
+//get formdata from Order page
+router.post('/orders',(req,res)=>{
+        console.log(req.body);
+        const myModel = connObj.model('myOrders', OrderSchema);
+        var OrderData= req.body;
+                           var orderdetails = new myModel({
+                           formDetails: OrderData.formData,
+                        
+                        });
+                
+                orderdetails.save(function(err, order){
+                console.log('ganesh',err,order);
+                res.json({orderNumber : order._id});
+           
+            });
+       
+});
+
 // Ping Device from Device Manager
 router.post('/ping-device', async (req, res) => {
 
@@ -123,7 +143,7 @@ router.post('/ping-device', async (req, res) => {
 });
 
 //get Orders List for Active Services Page
-router.post('/service-orders', async (req, res) => {
+router.post('/service-order', async (req, res) => {
 
     var OrderData = await serviceOrder.getOrders(req.body.vmIPAddress, req.body.accessToken);
     res.send(OrderData);

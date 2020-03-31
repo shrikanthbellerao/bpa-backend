@@ -36,7 +36,7 @@ var functions = {};
 functions.selectFavitems = (req) => {
         const ServiceItemsModel = connObj.model('service-item', ServiceItemsSchema);
         ServiceItemsModel.update({'_id':req.body.id},{$set:{'flag':true}},(err,data)=>{
-            console.log('res1',err),
+            console.log('error:',err),
             console.log('res2',data);
         })
 }      
@@ -44,7 +44,7 @@ functions.selectFavitems = (req) => {
 functions.deleteFavitems = (req) => {
     const ServiceItemsModel = connObj.model('service-item', ServiceItemsSchema);
     ServiceItemsModel.update({'_id':req.body.id},{$set:{'flag':false}},(err,data)=>{
-        console.log('res1',err),
+        console.log('error:',err),
         console.log('res2',data);
     })
 }
