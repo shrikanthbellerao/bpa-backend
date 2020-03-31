@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
-const contactUsSchema = require('../model/contactUs.model').contactUsSchema;
+const contactUsSchema = require('../model/contact-Us.model').contactUsSchema;
 const dbUser = 'bpa';
 const dbPass = 'bpa';
 const dbServer = 'bpa-mzccx.mongodb.net';
@@ -12,8 +12,8 @@ dbUrl, {
 useNewUrlParser: true,
 useUnifiedTopology: true
 })
-const UserModel = connObj.model('faq', FAQSchema);
-router.get('/FAQ', (req, res) => {
+const UserModel = connObj.model('contactUs', contactUsSchema);
+router.post('/contact-Us', (req, res) => {
 UserModel.find((err, user) => {
 if (err) {
 console.log('Failed to fetch Admin Details from the database');

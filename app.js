@@ -18,6 +18,7 @@ const serviceOrder = require('./controller/service-order').ServiceOrderData;
 const activeService = require('./controller/active-services').ActiveServiceData;
 const cors = require('cors');
 const faq= require('./controller/FAQ');
+const contactUsSchema = require('./model/contact-us.model').contactUsSchema;
 
 // const RedisClient = redis.createClient();
 // RedisClient.on('connect', function() {
@@ -11562,6 +11563,27 @@ router.post('/orders',(req,res)=>{
        
 });
 
+
+//contactUs
+
+router.post('/contactUs',(req,res)=>{
+    
+    const myModel = connObj.model('contactform', contactUsSchema );
+    var form= req.body;
+                       var formdetails = new myModel({
+                       name: form.formData.name,
+                       email: form.formData.emailid,
+                       message: form.formData.message,
+                    
+                    });
+            
+            formdetails.save(function(err, order){
+          
+            res.json({
+                status: 'success'
+            })
+            });
+        })  
 // Ping Device from Device Manager
 router.post('/ping-device', async (req, res) => {
 
@@ -11734,6 +11756,7 @@ router.post('/service-item', async(req, res) => {
 app.use('',appConfig);
 app.use('',myProfile);
 app.use('',faq); 
+
 
 app.listen(8080, () => {
 
