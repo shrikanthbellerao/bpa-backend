@@ -7,6 +7,6 @@ const ServiceCategorySchema = new Schema({
   description: String
 });
 
-const ServiceCategoryModel = mongoose.model('category-service', ServiceCategorySchema);
+const ServiceCategoryModel = mongoose.model('categories-service', ServiceCategorySchema);
 module.exports = ServiceCategorySchema;
 module.exports = ServiceCategoryModel;
