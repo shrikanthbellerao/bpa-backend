@@ -112,9 +112,42 @@ router.post('/delete-favourite',async (req, res) => {
 
 //get Devices List for Device Manger Page
 router.post('/device-manager', async (req, res) => {
+    
+    try {
+        var deviceData = await deviceManager.getDevices(req.body.vmIPAddress, req.body.nsoInstance, req.body.accessToken);
+        res.send(deviceData);
+    }
+    catch(error) {
+        res.send(error);
+    }
+    
+});
 
-    var DeviceData = await deviceManager.getDevices(req.body.vmIPAddress, req.body.nsoInstance, req.body.accessToken);
-    res.send(DeviceData);
+// Ping Device from Device Manager
+router.post('/ping-device', async (req, res) => {
+
+    try {
+        var pingData = await deviceManager.pingDevice(req.body.pingDeviceInfo.name, req.body.vmIPAddress, req.body.nsoInstance, req.body.accessToken, req.body.pingDeviceInfo);
+        res.send(pingData);
+    }
+    catch(error) {
+        res.send(error);
+    }
+
+});
+
+// Edit Device Detils from Device Manager
+
+router.post('/edit-device', async (req, res)=>{
+
+    try {
+        var editData = await deviceManager.editDevice(req.body.deviceInfo);
+        res.send(editData);
+    }
+    catch(error) {
+        res.send(error);
+    }
+     
 
 });
 
@@ -157,13 +190,7 @@ router.post('/contactUs',(req,res)=>{
             })
             });
         })  
-// Ping Device from Device Manager
-router.post('/ping-device', async (req, res) => {
 
-    var PingData = await deviceManager.pingDevice(req.body.pingDeviceInfo.name, req.body.vmIPAddress, req.body.nsoInstance, req.body.accessToken, req.body.pingDeviceInfo);
-    res.send(PingData);
-
-});
 
 //get Orders List for Active Services Page
 router.post('/service-order', async (req, res) => {
