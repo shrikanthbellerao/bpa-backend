@@ -92,7 +92,7 @@ methods.pingDevice = (deviceName, vmIPAddress, nsoInstance, accessToken, pingDev
                         postRequestOptions.headers.Authorization = `Bearer ${accessToken}`;
                         postRequestOptions.body = [pingDeviceInfo];
 
-                        request(postRequestOptions, function (error, response, body) {
+                        request(postRequestOptions, (error, response, body) => {
                             console.log('Device Manager : Ping Device API Error - ', error);
                             if (error) {
                                 responseObj.status = 'Error';
@@ -155,7 +155,7 @@ methods.getDevices = (vmIPAddress, nsoInstance, accessToken) => {
                 getRequestOptions.headers.Authorization = `Bearer ${accessToken}`;
 
 
-                request(getRequestOptions, function (error, response, devicelist) {
+                request(getRequestOptions, async (error, response, devicelist) => {
 
                     console.log('Device Manager : Device List API Error - ', error);
 
@@ -163,25 +163,23 @@ methods.getDevices = (vmIPAddress, nsoInstance, accessToken) => {
                         responseObj.status = 'Error';
                         responseObj.msg = `Error Occurred while Fetching Device List. Error Message: ${error}`;
                         responseObj.body = null;
-                        resolve(responseObj);
+                        reject(responseObj);
                     } else {
 
-
-                        DbDeviceLoop(devicelist, DeviceModel).then((ErrorFlag) => {
-                            if (ErrorFlag) {
-                                responseObj.status = 'Error';
-                                responseObj.msg = 'Error Occurred while Inserting Device List into MongoDB';
-                                responseObj.body = null;
-                                console.log('Device Manager : Error Occurred while Inserting Device List into MongoDB');
-                                reject(responseObj);
-                            } else {
-                                responseObj.status = 'Success';
-                                responseObj.msg = 'Fetched Data Successfully';
-                                responseObj.body = devicelist;
-                                console.log('Device Manager : Serving Device List from API and stored in MongoDB');
-                                resolve(responseObj);
-                            }
-                        })
+                        var ErrorFlag = await DbDeviceLoop(devicelist, DeviceModel);
+                        if (ErrorFlag) {
+                            responseObj.status = 'Error';
+                            responseObj.msg = 'Error Occurred while Inserting Device List into MongoDB';
+                            responseObj.body = null;
+                            console.log('Device Manager : Error Occurred while Inserting Device List into MongoDB');
+                            reject(responseObj);
+                        } else {
+                            responseObj.status = 'Success';
+                            responseObj.msg = 'Fetched Data Successfully';
+                            responseObj.body = devicelist;
+                            console.log('Device Manager : Serving Device List from API and stored in MongoDB');
+                            resolve(responseObj);
+                        }
                     }
 
                 });
@@ -211,7 +209,7 @@ var DbDeviceLoop = (devicelist, DeviceModel) => {
                 controller_id: devicelist[i].controller_id,
                 sub_controller_id: devicelist[i].sub_controller_id
             });
-
+            
             errorflag = await dbSave(deviceObj)
             if (errorflag === true)
                 break;
@@ -235,7 +233,34 @@ var dbSave = (deviceObj) => {
     })
 }
 
+methods.editDevice = (deviceInfo) => {
+    return new Promise((resolve, reject) => {
+        const DeviceModel = connObj.model('device', DeviceSchema);
+        var query = {_id:deviceInfo._id};
+        var newValues = {$set : {port : deviceInfo.port, protocol : deviceInfo.protocol, controller_id : deviceInfo.controller_id, authgroup : deviceInfo.authgroup}};
+        DeviceModel.findOneAndUpdate(query, newValues , function (error, doc) {
+            if (error) {
+
+                responseObj.status = 'Error';
+                responseObj.msg = `Error Occurred while Updating Document . Error Message: ${error}`;
+                console.log('Device Manager : Update Document Error');
+                reject(responseObj);
+
+            } else {
+                responseObj.status = 'Success';
+                responseObj.msg = 'Update Document Success';
+                console.log('Device Manager : Update Document Success');
+                reject(responseObj);
+
+            }
+
+        });
+
+    });
+
+}
 
 
-exports.DeviceManagerData = methods;
+
+module.exports.DeviceManagerData = methods;
 
