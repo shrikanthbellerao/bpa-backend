@@ -1,81 +1,64 @@
-const request = require('request');
 const sinon = require('sinon');
 const expect = require('chai').expect;
-const ServiceItemData = require('../controller/service-item').getServiceItems;
-const Serviceitemsmodel = require('../model/service-item.model').Serviceitemsmodel
-describe('with Mock: data present in DB',() => {
-    it('should fetch data from mock DB',(done) => {
-        const serviceitemsobj = [
-            {
-                _id: "5e43a666de78ef018a9948c4",
-                name: "Refresh Cisco IP Phone",
-                description: "Refresh Cisco IP Phone",
-                tags:[
-                    {
-                      _id: "5e7e1307ee20442874cd653b",
-                      name: "collaboration"
-                    }
-                ],
-                categoryIds:[
-                    {
-                        description: "Services to update and add collaboration features",
-                        _id: "5e43a65d0a5e10018ff9cc07",
-                        name: "Collaboration Services"
-                    }
-                ],
-                flag: true,
-                __v: 0
-            },
-            {
-                _id: "5e43a66c0a5e10018ff9cc0b",
-                name: "Link Route Away/Restore Management",
-                description: "This service provides core link route away and route restore operations.",
-                tags:[
-                    {
-                        _id: "5e7e1307ee20442874cd653c",
-                        name: "core service"
-                    }
-                ],
-                categoryIds:[
-                    {
-                        description: "Core Services",
-                        _id: "5e43a65dde78ef018a9948c1",
-                        name: "Core Services"
-                    } 
-                ],
-                flag: false,
-                __v: 0
-            },
-            {
-                _id: "5e43a6940a5e10018ff9cc11",
-                name: "Enterprise IDE Switch Provisioning",
-                description: "This service will be used to refresh an existing Catalyst 6500 IDE Switches to Catalyst 4500 IDE Switches and Catalyst 3560 IDE Switches to Catalyst 3650 IDE Switches, Net new deployemnt of Catalyst 4500 and Catalyst 3650 IDE Switches.",
-                tags: [
-                    {
-                        _id: "5e7e1307ee20442874cd6544",
-                        name: "enterprise"
-                    }
-                ],
-                categoryIds: [
-                    {
-                        description: "Enterprise Services",
-                        _id: "5e43a65d0a5e10018ff9cc06",
-                        name: "Enterprise Services"
-                    }
-                ],
-                flag: true,
-                __v: 0
-            }
-        ]
-        var responseObj = {
-            status: '',
-            msg: '',
-            body: null
-        };
+const serviceItem = require('../controller/service-item').ServiceItemData;
 
-        responseObj = await ServiceItemData.getServiceItems(null,null).then((items) => {
-            items.
-        })
-        
-       });
+let vmIPAddress = '10.122.32.86:9091';
+let nsoInstance = 'RTP-Core-1,nso5-lsa3-rd';
+let accessToken = 'accessToken';
+
+let serviceitemsobj = [
+    {
+        _id: "5e43a666de78ef018a9948c4",
+        name: "Refresh Cisco IP Phone",
+        description: "Refresh Cisco IP Phone",
+        tags:[
+            {
+              _id: "5e7e1307ee20442874cd653b",
+              name: "collaboration"
+            }
+        ],
+        categoryIds:[
+            {
+                description: "Services to update and add collaboration features",
+                _id: "5e43a65d0a5e10018ff9cc07",
+                name: "Collaboration Services"
+            }
+        ],
+        flag: true,
+        __v: 0
+    }
+]
+
+let response = {
+    status: '',
+    msg: '',
+};
+
+
+describe('Service-Items Controller',() => {
+    let getServiceItems = sinon.stub(serviceItem,'getServiceItems');
+    it('should fetch Service Items- Success',(done) => {
+        response.status = 'Success';
+        response.msg = 'Fetching Successful';
+        response.body = serviceitemsobj;
+        getServiceItems.withArgs(vmIPAddress,accessToken).resolves(response);
+        serviceItem.getServiceItems(vmIPAddress,accessToken).then( (result) => {
+            expect(result).to.equal(response);
+            done();
+        }).catch((err) =>{
+            done(err);
+        });
+    });
+
+    it('should fetch Service Items- Error',(done) => {
+
+        response.status = 'Error';
+        response.msg = 'Error Occurred while fetching service items List.';
+        getServiceItems.withArgs(vmIPAddress,accessToken).rejects(response);
+        serviceItem.getServiceItems(vmIPAddress, nsoInstance, accessToken).catch( (error) => {
+            expect(error.status).to.equal('Error');
+            done();
+        });
+    });
+    
     })

@@ -5,7 +5,8 @@
   "main": "app.js",
   "scripts": {
     "test": "mocha './test/**/*.test.js'",
-    "coverage": "nyc --reporter=lcov --reporter=text npm run test"
+    "coverage": "nyc --reporter=lcov --reporter=text npm run test",
+    "tests": "nodemon --exec \"npm test\""
   },
   "nyc": {
     "include": "controller",
