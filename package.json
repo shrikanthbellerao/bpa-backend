@@ -5,13 +5,12 @@
   "main": "app.js",
   "scripts": {
     "test": "mocha './test/**/*.test.js'",
-    "coverage":"nyc --reporter=lcov --reporter=text npm run test"
-    },
-    "nyc":{
-      "include": "controller",
-      "exclude": "test"
-
-    },
+    "coverage": "nyc --reporter=lcov --reporter=text npm run test"
+  },
+  "nyc": {
+    "include": "controller",
+    "exclude": "test"
+  },
   "author": "",
   "license": "ISC",
   "dependencies": {
