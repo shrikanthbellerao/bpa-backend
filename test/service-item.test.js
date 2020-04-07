@@ -55,7 +55,7 @@ describe('Service-Items Controller',() => {
         response.status = 'Error';
         response.msg = 'Error Occurred while fetching service items List.';
         getServiceItems.withArgs(vmIPAddress,accessToken).rejects(response);
-        serviceItem.getServiceItems(vmIPAddress, nsoInstance, accessToken).catch( (error) => {
+        serviceItem.getServiceItems(vmIPAddress,accessToken).catch( (error) => {
             expect(error.status).to.equal('Error');
             done();
         });
