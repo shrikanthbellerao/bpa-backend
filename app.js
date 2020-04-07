@@ -6,26 +6,22 @@ const bodyParser = require('body-parser');
 const compression = require('compression');
 const request = require('request').defaults({ rejectUnauthorized: false });
 const redis = require("redis");
+const deviceManager = require('./controller/device-manager').DeviceManagerData;
 const appConfig = require('./controller/app-config')
 const myProfile = require('./controller/my-profile')
-const deviceManager = require('./controller/device-manager').DeviceManagerData;
 const serviceItems = require('./controller/service-item').ServiceItemData;
-const serviceOrder = require('./controller/service-order').ServiceOrderData;
-
-const ServiceCategorySchema = require('./model/category-service.model').ServiceCategorySchema;
 const serviceCatalog = require('./controller/service-catalog').ServiceCatalogData;
 const OrderSchema = require('./model/order.model').OrderSchema;
 const Schema = mongoose.Schema;
+const serviceOrder = require('./controller/service-order').ServiceOrderData;
 const activeService = require('./controller/active-services').ActiveServiceData;
-
-// const cors = require('cors');
+const cors = require('cors');
 const faq= require('./controller/FAQ');
 const contactUsSchema = require('./model/contact-us.model').contactUsSchema;
 
-// app.use(cors({
-//     origin: 'http://localhost:4200'
-// }))
-
+app.use(cors({
+    origin: 'http://localhost:4200'
+}))
 const dbUser = 'bpa';
 const dbPass = 'bpa';
 const dbServer = 'bpa-mzccx.mongodb.net';
@@ -68,9 +64,6 @@ var responseObj = {
     msg: '',
     body: null
 };
-
-var broadcastMessage = 'Site is under construction. Please check later!'
-
 
 // Test Router
 router.get('/', (req, res) => {
@@ -204,6 +197,7 @@ router.post('/service-order', async (req, res) => {
 
     var OrderData = await serviceOrder.getOrders(req.body.vmIPAddress, req.body.accessToken);
     res.send(OrderData);
+
 });
 
 //get Milestones for Active Services Page
@@ -221,54 +215,11 @@ router.post('/category-service', async (req, res) => {
     res.send(CategoryData);
 });
 
-//Select favourite items from Service Catalog microservice of BPA
-router.post('/select-favourite', (req, res) => {
-
-    console.log('POST /select-favourite: ', req.body);
-    const ServiceItemsModel = connObj.model('service-item', ServiceItemsSchema);
-    ServiceItemsModel.update({'_id':req.body.id},{$set:{'flag':true}},(err,data)=>{
-        console.log('res1',err),
-        console.log('res2',data);
-        res.json({status:'service item successfully selected as favourite'})
-    })
-    
-});
-router.post('/delete-favourite', (req, res) => {
-
-    console.log('POST /delete-favourite: ', req.body);
-    const ServiceItemsModel = connObj.model('service-item', ServiceItemsSchema);
-    ServiceItemsModel.update({'_id':req.body.id},{$set:{'flag':false}},(err,data)=>{
-        console.log('res1',err),
-        console.log('res2',data);
-        res.json({status:'service item successfully deleted from favourite list'})
-    })
-    
-});
-
 //Fetch service items from service catalog
 router.post('/service-item', async(req, res) => {
 
     var itemData = await serviceItems.getServiceItems(req.body.vmIPAddress,req.body.accessToken);
     res.send(itemData);
-});
-
-
-// Return the Broadcast message
-router.get('/broadcast-message', (req, res) => {
-
-    console.log('GET /broadcast-message: ', req.body);
-
-    res.send({ broadcastMessage });
-});
-
-// Update the Broadcast Message
-router.put('/broadcast-message', (req, res) => {
-
-    console.log('PUT /broadcast-message: ', req.body);
-
-    broadcastMessage = req.body.broadcastMessage;
-    res.send({ broadcastMessage });
-
 });
 
 app.use('',appConfig);
