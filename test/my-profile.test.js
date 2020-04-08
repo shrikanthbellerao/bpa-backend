@@ -6,7 +6,7 @@ const myProfile = app.use(require('../controller/my-profile'));
 const ProfileModel = require('../model/user-detail.model');
 var httpMocks = require('node-mocks-http');
 
-describe(' Testing Support APIs', function () {
+describe(' Testing Profile APIs', function () {
 
     it('should fetch the admin details', function (done) {
 
