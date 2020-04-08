@@ -3,7 +3,7 @@ const chai = require("chai");
 var should = chai.should();
 const sinon = require('sinon');
 const myProfile = app.use(require('../controller/my-profile'));
-const ProfileModel = require('../model/support-detail.model');
+const ProfileModel = require('../model/user-detail.model');
 var httpMocks = require('node-mocks-http');
 
 describe(' Testing Support APIs', function () {
